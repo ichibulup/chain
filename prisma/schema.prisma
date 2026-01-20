@@ -1,0 +1,2617 @@
+// ======================================================
+// PRISMA SCHEMA - Restaurant Chain Multi-Platform System
+// Multi-platform: Web (Next.js) + Mobile (Expo) + API (Express)
+// Supabase Auth + Storage + Realtime + Database
+// camelCase models/fields for Node.js (Express/Next/Expo)
+// ======================================================
+
+generator client {
+  provider = "prisma-client-js"
+  // engineType = "client"
+  // output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url       = env("EXPRESS_PRIVATE_SUPABASE_URL")
+  // directUrl = env("EXPRESS_PRIVATE_SUPABASE_DIRECT_URL")
+}
+
+/**
+ * =========================
+ * ENUMS
+ * =========================
+ */
+
+enum AuthProvider {
+  google
+  facebook
+  apple
+  microsoft
+  github
+  discord
+  email
+  phone
+  magicLink
+}
+
+enum UserStatus {
+  active
+  inactive
+  banned
+  suspended
+  pendingVerification
+  locked
+  onLeave
+}
+
+enum UserActivityStatus {
+  available
+  busy
+  doNotDisturb
+  away
+  offline
+  invisible
+}
+
+enum UserRole {
+  customer
+  staff
+  manager
+  admin
+  master
+  delivery
+  supplier
+  warehouse
+}
+
+enum OrganizationRole {
+  admin
+  member
+  guest
+}
+
+enum RestaurantStatus {
+  active
+  inactive
+  maintenance
+  closed
+}
+
+enum TableStatus {
+  available
+  occupied
+  reserved
+  maintenance
+  outOfOrder
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  seated
+  completed
+  cancelled
+  noShow
+}
+
+enum TableOrderStatus {
+  active
+  completed
+  cancelled
+}
+
+enum OrderType {
+  dineIn
+  takeaway
+  delivery
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  ready
+  served
+  completed
+  cancelled
+}
+
+enum CookingStatus {
+  pending
+  preparing
+  cooking
+  ready
+  served
+  cancelled
+}
+
+enum PaymentMethod {
+  cash
+  card
+  bankTransfer
+  momo
+  zalopay
+  viettelpay
+  vnpay
+  shopeepay
+  paypal
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  processing
+  cancelled
+  refunded
+}
+
+enum RefundStatus {
+  processing
+  completed
+  failed
+  cancelled
+}
+
+enum PaymentIntentStatus {
+  created
+  requiresAction
+  processing
+  succeeded
+  cancelled
+  failed
+}
+
+enum RestaurantStaffRole {
+  staff
+  manager
+  chef
+  cashier
+  security
+  cleaner
+  supervisor
+  sousChef
+  waiter
+  host
+}
+
+enum StaffStatus {
+  active
+  inactive
+  onLeave
+  suspended
+  terminated
+}
+
+enum StaffShiftType {
+  morning
+  afternoon
+  evening
+  night
+  fullDay
+  splitShift
+}
+
+enum StaffScheduleStatus {
+  scheduled
+  confirmed
+  inProgress
+  completed
+  absent
+  late
+  cancelled
+}
+
+enum InventoryTransactionType {
+  purchase
+  usage
+  adjustment
+  waste
+  return
+  transfer
+}
+
+enum VoucherDiscountType {
+  percentage
+  fixedAmount
+}
+
+enum PromotionType {
+  percentage
+  fixedAmount
+  buyOneGetOne
+  comboDeal
+  happyHour
+  seasonal
+}
+
+enum ReviewStatus {
+  active
+  hidden
+  flagged
+  deleted
+}
+
+enum RevenueReportType {
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+enum ConversationType {
+  support
+  feedback
+  complaint
+  inquiry
+}
+
+enum ConversationStatus {
+  active
+  resolved
+  closed
+}
+
+enum MessageType {
+  text
+  image
+  file
+  system
+}
+
+enum NotificationType {
+  orderCreated
+  orderConfirmed
+  orderPreparing
+  orderReady
+  orderDelivered
+  orderCancelled
+  orderPaymentSuccess
+  orderPaymentFailed
+  reservationCreated
+  reservationConfirmed
+  reservationCancelled
+  reservationReminder
+  shiftAssigned
+  shiftReminder
+  scheduleUpdated
+  attendanceReminder
+  newReview
+  lowInventory
+  menuUpdated
+  promotionCreated
+  voucherExpiresSoon
+  memberJoined
+  memberLeft
+  roleChanged
+  organizationUpdated
+  systemMaintenance
+  featureAnnouncement
+  securityAlert
+  newMessage
+  conversationStarted
+}
+
+enum NotificationPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum NotificationStatus {
+  unread
+  read
+  archived
+}
+
+enum DeliveryVehicle {
+  motorcycle
+  bicycle
+  car
+  scooter
+  walking
+}
+
+enum DeliveryStaffStatus {
+  available
+  busy
+  offline
+  onBreak
+  maintenance
+}
+
+enum DeliveryStatus {
+  assigned
+  accepted
+  pickedUp
+  inTransit
+  delivered
+  failed
+  cancelled
+}
+
+enum SupplierStatus {
+  active
+  inactive
+  suspended
+  blacklisted
+}
+
+enum PurchaseOrderStatus {
+  draft
+  sent
+  confirmed
+  partiallyReceived
+  received
+  cancelled
+}
+
+enum WarehouseTransferStatus {
+  draft
+  pending
+  approved
+  completed
+  cancelled
+}
+
+enum WarehouseReceiptStatus {
+  draft
+  pending
+  approved
+  received
+  cancelled
+}
+
+enum WarehouseIssueStatus {
+  draft
+  pending
+  approved
+  issued
+  cancelled
+}
+
+enum WarehouseIssuePurpose {
+  cooking
+  waste
+  transfer
+  adjustment
+  sample
+  maintenance
+  other
+}
+
+enum InventoryUnit {
+  kg
+  gram
+  liter
+  ml
+  piece
+  box
+  bag
+  bottle
+  can
+  pack
+  dozen
+  case
+  carton
+  pallet
+  meter
+  cm
+  inch
+  foot
+  yard
+  gallon
+  quart
+  pint
+  cup
+  tablespoon
+  teaspoon
+  ounce
+  pound
+  ton
+  other
+}
+
+enum AnalyticsEvent {
+  pageView
+  menuItemView
+  orderCreated
+  orderCompleted
+  userRegistration
+  reservationCreated
+  reviewSubmitted
+  searchPerformed
+  deliveryAssigned
+  deliveryCompleted
+  inventoryLow
+  supplierOrderCreated
+  warehouseReceiptCreated
+  warehouseIssueCreated
+  staffCheckIn
+  staffCheckOut
+  paymentProcessed
+  voucherUsed
+  promotionApplied
+}
+
+enum KpiPeriod {
+  daily
+  weekly
+  monthly
+  quarterly
+  yearly
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  login
+  logout
+  export
+  import
+  approve
+  reject
+  cancel
+  checkIn
+  checkOut
+  assign
+  unassign
+  activate
+  deactivate
+}
+
+enum DevicePlatform {
+  ios
+  android
+  web
+  desktop
+}
+
+enum FileType {
+  image
+  video
+  document
+  audio
+  other
+}
+
+enum StorageBucket {
+  avatars
+  restaurantImages
+  menuItems
+  products
+  documents
+  receipts
+  deliveries
+  reviews
+  temp
+}
+
+/**
+ * =========================
+ * CORE ORGANIZATION / ACCESS
+ * =========================
+ */
+
+model User {
+  // Supabase Auth ID (primary key)
+  id String @id @default(uuid())
+
+  // Basic Info
+  username        String?   @unique
+  email           String    @unique
+  emailNormalized String    @unique
+  firstName       String?
+  lastName        String?
+  fullName        String?
+  phoneCode       String?
+  phoneNumber     String?
+  avatarUrl       String?
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+
+  // User Status & Role
+  status         UserStatus         @default(active)
+  role           UserRole           @default(customer)
+  activityStatus UserActivityStatus @default(available)
+  isOnline       Boolean            @default(false)
+  lastActivityAt DateTime?
+  lastSeenAt     DateTime?
+
+  // Personal Info
+  dateOfBirth DateTime?
+  gender      String?
+
+  // Business Metrics
+  loyaltyPoints Int       @default(0)
+  totalOrders   Int       @default(0)
+  totalSpent    Decimal   @default(0) @db.Decimal(14, 2)
+  lastSignInAt  DateTime?
+
+  // Supabase Auth Integration
+  supabaseUserId String?        @unique // Link to Supabase auth.users.id
+  providers      AuthProvider[] @default([]) // Array of auth providers used
+  lastProvider   AuthProvider? // Last used provider
+
+  // Security & Permissions
+  twoFactorEnabled          Boolean   @default(false)
+  totpEnabled               Boolean   @default(false)
+  backupCodeEnabled         Boolean   @default(false)
+  banned                    Boolean   @default(false)
+  locked                    Boolean   @default(false)
+  lockoutExpiresInSeconds   Int?
+  deleteSelfEnabled         Boolean   @default(true)
+  createOrganizationEnabled Boolean   @default(false)
+  createOrganizationsLimit  Int?
+  legalAcceptedAt           DateTime?
+
+  // Metadata (Supabase compatible)
+  publicMetadata     Json?
+  privateMetadata    Json?
+  unsafeMetadata     Json?
+  emailAddresses     Json?
+  phoneNumbers       Json?
+  web3Wallets        Json?
+  externalAccounts   Json?
+  enterpriseAccounts Json?
+  passkeys           Json?
+
+  // Legacy compatibility fields
+  hasImage        Boolean @default(false)
+  imageUrl        String?
+  passwordEnabled Boolean @default(false)
+  twoFactorSecret String?
+  backupCodes     Json?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  addresses                 Address[]
+  organizationsOwned        Organization[]           @relation("organizations_owner")
+  organizationMemberships   OrganizationMembership[]
+  restaurantsManaged        Restaurant[]             @relation("restaurants_manager")
+  restaurantStaffRoles      RestaurantUserRole[]
+  conversationsAsCustomer   Conversation[]           @relation("conversations_customer")
+  conversationsAsStaff      Conversation[]           @relation("conversations_staff")
+  messagesSent              Message[]
+  orders                    Order[]                  @relation("orders_customer")
+  orderStatusHistory        OrderStatusHistory[]
+  reservations              Reservation[]            @relation("reservations_customer")
+  reviews                   Review[]                 @relation("reviews_customer")
+  notifications             Notification[]
+  paymentsProcessed         Payment[]                @relation("payments_processed_by")
+  userStatistics            UserStatistics?
+  voucherUsages             VoucherUsage[]
+  staffSchedules            StaffSchedule[]          @relation("staff_schedules_staff")
+  staffAttendance           StaffAttendance[]        @relation("staff_attendance_staff")
+  tableOrdersStaffed        TableOrder[]             @relation("table_orders_staff")
+  deliveryStaff             DeliveryStaff?
+  purchaseOrders            PurchaseOrder[]
+  warehouseReceiptsCreated  WarehouseReceipt[]       @relation("warehouse_receipts_created_by")
+  warehouseReceiptsApproved WarehouseReceipt[]       @relation("warehouse_receipts_approved_by")
+  warehouseIssuesCreated    WarehouseIssue[]         @relation("warehouse_issues_created_by")
+  warehouseIssuesApproved   WarehouseIssue[]         @relation("warehouse_issues_approved_by")
+  deviceTokens              DeviceToken[]
+  carts                     Cart[]
+  assets                    Asset[]                  @relation("assets_created_by")
+
+  // Audit relations - createdBy
+  organizationsCreated         Organization[]         @relation("organizations_created_by")
+  restaurantChainsCreated      RestaurantChain[]      @relation("restaurant_chains_created_by")
+  restaurantsCreated           Restaurant[]           @relation("restaurants_created_by")
+  categoriesCreated            Category[]             @relation("categories_created_by")
+  menusCreated                 Menu[]                 @relation("menus_created_by")
+  menuItemsCreated             MenuItem[]             @relation("menu_items_created_by")
+  recipesCreated               Recipe[]               @relation("recipes_created_by")
+  optionGroupsCreated          OptionGroup[]          @relation("option_groups_created_by")
+  optionsCreated               Option[]               @relation("options_created_by")
+  tablesCreated                Table[]                @relation("tables_created_by")
+  reservationsCreated          Reservation[]          @relation("reservations_created_by")
+  tableOrdersCreated           TableOrder[]           @relation("table_orders_created_by")
+  ordersCreated                Order[]                @relation("orders_created_by")
+  orderItemsCreated            OrderItem[]            @relation("order_items_created_by")
+  paymentsCreated              Payment[]              @relation("payments_created_by")
+  refundsCreated               Refund[]               @relation("refunds_created_by")
+  paymentIntentsCreated        PaymentIntent[]        @relation("payment_intents_created_by")
+  reviewsCreated               Review[]               @relation("reviews_created_by")
+  vouchersCreated              Voucher[]              @relation("vouchers_created_by")
+  promotionsCreated            Promotion[]            @relation("promotions_created_by")
+  taxRatesCreated              TaxRate[]              @relation("tax_rates_created_by")
+  deliveryStaffCreated         DeliveryStaff[]        @relation("delivery_staff_created_by")
+  deliveriesCreated            Delivery[]             @relation("deliveries_created_by")
+  deliveryZonesCreated         DeliveryZone[]         @relation("delivery_zones_created_by")
+  warehousesCreated            Warehouse[]            @relation("warehouses_created_by")
+  inventoryItemsCreated        InventoryItem[]        @relation("inventory_items_created_by")
+  inventoryTransactionsCreated InventoryTransaction[] @relation("inventory_transactions_created_by")
+  inventoryBalancesCreated     InventoryBalance[]     @relation("inventory_balances_created_by")
+  suppliersCreated             Supplier[]             @relation("suppliers_created_by")
+  supplierItemsCreated         SupplierItem[]         @relation("supplier_items_created_by")
+  warehouseTransfersCreated    WarehouseTransfer[]    @relation("warehouse_transfers_created_by")
+  staffSchedulesCreated        StaffSchedule[]        @relation("staff_schedules_created_by")
+  staffAttendanceCreated       StaffAttendance[]      @relation("staff_attendance_created_by")
+  revenueReportsCreated        RevenueReport[]        @relation("revenue_reports_created_by")
+  kpiMetricsCreated            KpiMetric[]            @relation("kpi_metrics_created_by")
+  notificationsCreated         Notification[]         @relation("notifications_created_by")
+  systemConfigsCreated         SystemConfig[]         @relation("system_configs_created_by")
+  retailProductsCreated        RetailProduct[]        @relation("retail_products_created_by")
+  cartsCreated                 Cart[]                 @relation("carts_created_by")
+
+  // Audit relations - updatedBy
+  organizationsUpdated         Organization[]         @relation("organizations_updated_by")
+  restaurantChainsUpdated      RestaurantChain[]      @relation("restaurant_chains_updated_by")
+  restaurantsUpdated           Restaurant[]           @relation("restaurants_updated_by")
+  categoriesUpdated            Category[]             @relation("categories_updated_by")
+  menusUpdated                 Menu[]                 @relation("menus_updated_by")
+  menuItemsUpdated             MenuItem[]             @relation("menu_items_updated_by")
+  recipesUpdated               Recipe[]               @relation("recipes_updated_by")
+  optionGroupsUpdated          OptionGroup[]          @relation("option_groups_updated_by")
+  optionsUpdated               Option[]               @relation("options_updated_by")
+  tablesUpdated                Table[]                @relation("tables_updated_by")
+  reservationsUpdated          Reservation[]          @relation("reservations_updated_by")
+  tableOrdersUpdated           TableOrder[]           @relation("table_orders_updated_by")
+  ordersUpdated                Order[]                @relation("orders_updated_by")
+  orderItemsUpdated            OrderItem[]            @relation("order_items_updated_by")
+  paymentsUpdated              Payment[]              @relation("payments_updated_by")
+  refundsUpdated               Refund[]               @relation("refunds_updated_by")
+  paymentIntentsUpdated        PaymentIntent[]        @relation("payment_intents_updated_by")
+  reviewsUpdated               Review[]               @relation("reviews_updated_by")
+  vouchersUpdated              Voucher[]              @relation("vouchers_updated_by")
+  promotionsUpdated            Promotion[]            @relation("promotions_updated_by")
+  taxRatesUpdated              TaxRate[]              @relation("tax_rates_updated_by")
+  deliveryStaffUpdated         DeliveryStaff[]        @relation("delivery_staff_updated_by")
+  deliveriesUpdated            Delivery[]             @relation("deliveries_updated_by")
+  deliveryZonesUpdated         DeliveryZone[]         @relation("delivery_zones_updated_by")
+  warehousesUpdated            Warehouse[]            @relation("warehouses_updated_by")
+  inventoryItemsUpdated        InventoryItem[]        @relation("inventory_items_updated_by")
+  inventoryTransactionsUpdated InventoryTransaction[] @relation("inventory_transactions_updated_by")
+  inventoryBalancesUpdated     InventoryBalance[]     @relation("inventory_balances_updated_by")
+  suppliersUpdated             Supplier[]             @relation("suppliers_updated_by")
+  supplierItemsUpdated         SupplierItem[]         @relation("supplier_items_updated_by")
+  purchaseOrdersUpdated        PurchaseOrder[]        @relation("purchase_orders_updated_by")
+  warehouseReceiptsUpdated     WarehouseReceipt[]     @relation("warehouse_receipts_updated_by")
+  warehouseIssuesUpdated       WarehouseIssue[]       @relation("warehouse_issues_updated_by")
+  warehouseTransfersUpdated    WarehouseTransfer[]    @relation("warehouse_transfers_updated_by")
+  staffSchedulesUpdated        StaffSchedule[]        @relation("staff_schedules_updated_by")
+  staffAttendanceUpdated       StaffAttendance[]      @relation("staff_attendance_updated_by")
+  revenueReportsUpdated        RevenueReport[]        @relation("revenue_reports_updated_by")
+  kpiMetricsUpdated            KpiMetric[]            @relation("kpi_metrics_updated_by")
+  notificationsUpdated         Notification[]         @relation("notifications_updated_by")
+  systemConfigsUpdated         SystemConfig[]         @relation("system_configs_updated_by")
+  retailProductsUpdated        RetailProduct[]        @relation("retail_products_updated_by")
+  cartsUpdated                 Cart[]                 @relation("carts_updated_by")
+
+  // Audit relations - deletedBy
+  organizationsDeleted         Organization[]         @relation("organizations_deleted_by")
+  restaurantChainsDeleted      RestaurantChain[]      @relation("restaurant_chains_deleted_by")
+  restaurantsDeleted           Restaurant[]           @relation("restaurants_deleted_by")
+  categoriesDeleted            Category[]             @relation("categories_deleted_by")
+  menusDeleted                 Menu[]                 @relation("menus_deleted_by")
+  menuItemsDeleted             MenuItem[]             @relation("menu_items_deleted_by")
+  recipesDeleted               Recipe[]               @relation("recipes_deleted_by")
+  optionGroupsDeleted          OptionGroup[]          @relation("option_groups_deleted_by")
+  optionsDeleted               Option[]               @relation("options_deleted_by")
+  tablesDeleted                Table[]                @relation("tables_deleted_by")
+  reservationsDeleted          Reservation[]          @relation("reservations_deleted_by")
+  tableOrdersDeleted           TableOrder[]           @relation("table_orders_deleted_by")
+  ordersDeleted                Order[]                @relation("orders_deleted_by")
+  orderItemsDeleted            OrderItem[]            @relation("order_items_deleted_by")
+  paymentsDeleted              Payment[]              @relation("payments_deleted_by")
+  refundsDeleted               Refund[]               @relation("refunds_deleted_by")
+  paymentIntentsDeleted        PaymentIntent[]        @relation("payment_intents_deleted_by")
+  reviewsDeleted               Review[]               @relation("reviews_deleted_by")
+  vouchersDeleted              Voucher[]              @relation("vouchers_deleted_by")
+  promotionsDeleted            Promotion[]            @relation("promotions_deleted_by")
+  taxRatesDeleted              TaxRate[]              @relation("tax_rates_deleted_by")
+  deliveryStaffDeleted         DeliveryStaff[]        @relation("delivery_staff_deleted_by")
+  deliveriesDeleted            Delivery[]             @relation("deliveries_deleted_by")
+  deliveryZonesDeleted         DeliveryZone[]         @relation("delivery_zones_deleted_by")
+  warehousesDeleted            Warehouse[]            @relation("warehouses_deleted_by")
+  inventoryItemsDeleted        InventoryItem[]        @relation("inventory_items_deleted_by")
+  inventoryTransactionsDeleted InventoryTransaction[] @relation("inventory_transactions_deleted_by")
+  inventoryBalancesDeleted     InventoryBalance[]     @relation("inventory_balances_deleted_by")
+  suppliersDeleted             Supplier[]             @relation("suppliers_deleted_by")
+  supplierItemsDeleted         SupplierItem[]         @relation("supplier_items_deleted_by")
+  purchaseOrdersDeleted        PurchaseOrder[]        @relation("purchase_orders_deleted_by")
+  warehouseReceiptsDeleted     WarehouseReceipt[]     @relation("warehouse_receipts_deleted_by")
+  warehouseIssuesDeleted       WarehouseIssue[]       @relation("warehouse_issues_deleted_by")
+  warehouseTransfersDeleted    WarehouseTransfer[]    @relation("warehouse_transfers_deleted_by")
+  staffSchedulesDeleted        StaffSchedule[]        @relation("staff_schedules_deleted_by")
+  staffAttendanceDeleted       StaffAttendance[]      @relation("staff_attendance_deleted_by")
+  revenueReportsDeleted        RevenueReport[]        @relation("revenue_reports_deleted_by")
+  kpiMetricsDeleted            KpiMetric[]            @relation("kpi_metrics_deleted_by")
+  notificationsDeleted         Notification[]         @relation("notifications_deleted_by")
+  systemConfigsDeleted         SystemConfig[]         @relation("system_configs_deleted_by")
+  retailProductsDeleted        RetailProduct[]        @relation("retail_products_deleted_by")
+  cartsDeleted                 Cart[]                 @relation("carts_deleted_by")
+
+  @@index([email])
+  @@index([supabaseUserId])
+  @@index([providers])
+  @@index([status])
+  @@index([role])
+}
+
+// UserIdentity model removed - using providers array in User model instead
+
+model Organization {
+  id          String    @id @default(uuid())
+  name        String
+  code        String    @unique
+  description String?
+  ownerId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  logoUrl     String?
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  owner          User                     @relation("organizations_owner", fields: [ownerId], references: [id])
+  createdBy      User?                    @relation("organizations_created_by", fields: [createdById], references: [id])
+  updatedBy      User?                    @relation("organizations_updated_by", fields: [updatedById], references: [id])
+  deletedBy      User?                    @relation("organizations_deleted_by", fields: [deletedById], references: [id])
+  chains         RestaurantChain[]
+  restaurants    Restaurant[]
+  memberships    OrganizationMembership[]
+  suppliers      Supplier[]
+  inventoryItems InventoryItem[]
+  menus          Menu[]
+}
+
+model OrganizationMembership {
+  id             String           @id @default(uuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole @default(member)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  joinedAt       DateTime?
+  invitedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+model RestaurantChain {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  logoUrl        String?
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("restaurant_chains_created_by", fields: [createdById], references: [id])
+  updatedBy    User?        @relation("restaurant_chains_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?        @relation("restaurant_chains_deleted_by", fields: [deletedById], references: [id])
+  restaurants  Restaurant[]
+}
+
+model Restaurant {
+  id             String           @id @default(uuid())
+  organizationId String
+  chainId        String?
+  code           String
+  name           String
+  address        String
+  phoneNumber    String?
+  email          String?
+  description    String?
+  coverUrl       String?
+  logoUrl        String?
+  openingHours   Json?
+  status         RestaurantStatus @default(active)
+  managerId      String?
+  timezone       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+  deletedAt      DateTime?
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  chain        RestaurantChain? @relation(fields: [chainId], references: [id])
+  manager      User?            @relation("restaurants_manager", fields: [managerId], references: [id])
+  createdBy    User?            @relation("restaurants_created_by", fields: [createdById], references: [id])
+  updatedBy    User?            @relation("restaurants_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?            @relation("restaurants_deleted_by", fields: [deletedById], references: [id])
+
+  // Relations
+  addesses              Address[]
+  tables                Table[]
+  reservations          Reservation[]
+  tableOrders           TableOrder[]
+  orders                Order[]
+  payments              Payment[]
+  reviews               Review[]
+  conversations         Conversation[]
+  staffRoles            RestaurantUserRole[]
+  staffSchedules        StaffSchedule[]
+  staffAttendance       StaffAttendance[]
+  revenueReports        RevenueReport[]
+  promotions            Promotion[]
+  vouchers              Voucher[]
+  // inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
+  warehouses            Warehouse[]
+  kpiMetrics            KpiMetric[]
+  suppliers             Supplier[]
+  purchaseOrders        PurchaseOrder[]
+  warehouseReceipts     WarehouseReceipt[]
+  warehouseIssues       WarehouseIssue[]
+  warehouseTransfers    WarehouseTransfer[]
+  inventoryBalances     InventoryBalance[]
+  deliveries            Delivery[]
+  deliveryZones         DeliveryZone[]
+  taxRates              TaxRate[]
+  carts                 Cart[]
+  retailProducts        RetailProduct[]
+  optionGroups          OptionGroup[]
+
+  @@unique([organizationId, code])
+}
+
+/**
+ * =========================
+ * ACCESS WITHIN RESTAURANT (internal staff membership)
+ * =========================
+ */
+model RestaurantUserRole {
+  id           String              @id @default(uuid())
+  restaurantId String
+  userId       String
+  role         RestaurantStaffRole
+  status       StaffStatus         @default(active)
+  hourlyRate   Decimal?            @db.Decimal(10, 2)
+  joinedAt     DateTime            @default(now())
+  leftAt       DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+}
+
+/**
+ * =========================
+ * CUSTOMER / ADDRESS / CHAT
+ * =========================
+ */
+
+model Address {
+  id             String   @id @default(uuid())
+  userId         String
+  restaurantId   String?
+  recipientName  String
+  recipientPhone String
+  streetAddress  String
+  ward           String?
+  district       String
+  city           String
+  country        String   @default("Vietnam")
+  latitude       Decimal? @db.Decimal(10, 7)
+  longitude      Decimal? @db.Decimal(10, 7)
+  tag            String? // home, work...
+  note           String?
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders     Order[]
+}
+
+model Conversation {
+  id            String             @id @default(uuid())
+  type          ConversationType   @default(support)
+  customerId    String?
+  restaurantId  String?
+  staffId       String?
+  title         String?
+  status        ConversationStatus @default(active)
+  lastMessageAt DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  customer   User?       @relation("conversations_customer", fields: [customerId], references: [id])
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+  staff      User?       @relation("conversations_staff", fields: [staffId], references: [id])
+  messages   Message[]
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  messageType    MessageType @default(text)
+  attachments    String[]
+  isRead         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+}
+
+/**
+ * =========================
+ * MENU / CATEGORY / MENU ITEM / RECIPES (+ Options)
+ * =========================
+ */
+
+model Category {
+  id           String    @id @default(uuid())
+  name         String
+  slug         String    @unique
+  description  String?
+  displayOrder Int       @default(0)
+  imageUrl     String?
+  isActive     Boolean   @default(true)
+  parentId     String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  createdBy User?      @relation("categories_created_by", fields: [createdById], references: [id])
+  updatedBy User?      @relation("categories_updated_by", fields: [updatedById], references: [id])
+  deletedBy User?      @relation("categories_deleted_by", fields: [deletedById], references: [id])
+  menuItems MenuItem[]
+}
+
+model Menu {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  isActive       Boolean   @default(true)
+  displayOrder   Int       @default(0)
+  imageUrl       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("menus_created_by", fields: [createdById], references: [id])
+  updatedBy    User?        @relation("menus_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?        @relation("menus_deleted_by", fields: [deletedById], references: [id])
+  items        MenuItem[]
+
+  @@index([organizationId])
+}
+
+model MenuItem {
+  id              String    @id @default(uuid())
+  // restaurantId    String
+  menuId          String
+  categoryId      String?
+  slug            String?
+  name            String
+  description     String?
+  price           Decimal   @db.Decimal(12, 2)
+  imageUrl        String?
+  isAvailable     Boolean   @default(true)
+  displayOrder    Int       @default(0)
+  isFeatured      Boolean   @default(false)
+  allergens       String[]
+  calories        Int?
+  dietaryInfo     String[]
+  preparationTime Int?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+
+  // restaurant        Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menu               Menu                  @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  category           Category?             @relation(fields: [categoryId], references: [id])
+  createdBy          User?                 @relation("menu_items_created_by", fields: [createdById], references: [id])
+  updatedBy          User?                 @relation("menu_items_updated_by", fields: [updatedById], references: [id])
+  deletedBy          User?                 @relation("menu_items_deleted_by", fields: [deletedById], references: [id])
+  recipes            Recipe[]
+  orderItems         OrderItem[]
+  reviews            Review[]
+  optionLinks        MenuItemOptionGroup[]
+  promotionMenuItems PromotionMenuItem[]
+  cartItems          CartItem[]
+  retailProducts     RetailProduct[]
+
+  // @@unique([restaurantId, slug])
+  // @@index([restaurantId])
+  @@index([menuId])
+  @@index([categoryId])
+  @@index([isAvailable])
+  @@index([isFeatured])
+  @@index([price])
+}
+
+model Recipe {
+  id           String    @id @default(uuid())
+  menuItemId   String
+  name         String
+  description  String?
+  instructions String?
+  cookTime     Int?
+  prepTime     Int?
+  servingSize  Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  menuItem    MenuItem           @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  createdBy   User?              @relation("recipes_created_by", fields: [createdById], references: [id])
+  updatedBy   User?              @relation("recipes_updated_by", fields: [updatedById], references: [id])
+  deletedBy   User?              @relation("recipes_deleted_by", fields: [deletedById], references: [id])
+  ingredients RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id              String  @id @default(uuid())
+  recipeId        String
+  inventoryItemId String
+  quantity        Decimal @db.Decimal(12, 2)
+  unit            String
+  notes           String?
+
+  recipe        Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
+
+/**
+ * Options / Modifiers cho món
+ */
+model OptionGroup {
+  id           String    @id @default(uuid())
+  restaurantId String
+  name         String
+  required     Boolean   @default(false)
+  minSelect    Int?
+  maxSelect    Int?
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?                 @relation("option_groups_created_by", fields: [createdById], references: [id])
+  updatedBy  User?                 @relation("option_groups_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?                 @relation("option_groups_deleted_by", fields: [deletedById], references: [id])
+  items      Option[]
+  menuLinks  MenuItemOptionGroup[]
+
+  @@index([restaurantId])
+}
+
+model Option {
+  id           String    @id @default(uuid())
+  groupId      String
+  name         String
+  priceDelta   Decimal   @default(0) @db.Decimal(12, 2)
+  isAvailable  Boolean   @default(true)
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  group            OptionGroup       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy        User?             @relation("options_created_by", fields: [createdById], references: [id])
+  updatedBy        User?             @relation("options_updated_by", fields: [updatedById], references: [id])
+  deletedBy        User?             @relation("options_deleted_by", fields: [deletedById], references: [id])
+  orderItemOptions OrderItemOption[]
+  cartItemOptions  CartItemOption[]
+}
+
+model MenuItemOptionGroup {
+  id           String @id @default(uuid())
+  menuItemId   String
+  groupId      String
+  displayOrder Int    @default(0)
+
+  menuItem MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  group    OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, groupId])
+  @@index([menuItemId])
+  @@index([groupId])
+}
+
+/**
+ * =========================
+ * TABLE / RESERVATION / TABLE ORDER
+ * =========================
+ */
+
+model Table {
+  id           String      @id @default(uuid())
+  restaurantId String
+  tableNumber  String
+  capacity     Int         @default(4)
+  location     String?
+  status       TableStatus @default(available)
+  qrCode       String?     @unique
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy    User?         @relation("tables_created_by", fields: [createdById], references: [id])
+  updatedBy    User?         @relation("tables_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?         @relation("tables_deleted_by", fields: [deletedById], references: [id])
+  reservations Reservation[]
+  tableOrders  TableOrder[]
+
+  @@unique([restaurantId, tableNumber])
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  tableId         String
+  customerId      String?
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  partySize       Int
+  reservationDate DateTime
+  durationHours   Decimal           @default(2) @db.Decimal(4, 2)
+  status          ReservationStatus @default(pending)
+  specialRequests String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  table        Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  customer     User?       @relation("reservations_customer", fields: [customerId], references: [id])
+  createdBy    User?       @relation("reservations_created_by", fields: [createdById], references: [id])
+  updatedBy    User?       @relation("reservations_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?       @relation("reservations_deleted_by", fields: [deletedById], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId String?
+
+  @@index([reservationDate])
+  @@index([status])
+}
+
+model TableOrder {
+  id          String           @id @default(uuid())
+  tableId     String?
+  orderId     String?
+  sessionCode String           @unique
+  status      TableOrderStatus @default(active)
+  openedAt    DateTime         @default(now())
+  closedAt    DateTime?
+  totalAmount Decimal?         @db.Decimal(14, 2)
+  staffId     String?
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  table        Table?      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  order        Order?      @relation(fields: [orderId], references: [id])
+  staff        User?       @relation("table_orders_staff", fields: [staffId], references: [id])
+  createdBy    User?       @relation("table_orders_created_by", fields: [createdById], references: [id])
+  updatedBy    User?       @relation("table_orders_updated_by", fields: [updatedById], references: [id])
+  deletedBy    User?       @relation("table_orders_deleted_by", fields: [deletedById], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId String?
+
+  @@index([tableId])
+  @@index([status])
+}
+
+/**
+ * =========================
+ * ORDER / PAYMENT / REVIEW / VOUCHER / PROMOTION
+ * =========================
+ */
+
+model Order {
+  id                   String        @id @default(uuid())
+  orderCode            String        @unique
+  restaurantId         String
+  customerId           String
+  addressId            String?
+  orderType            OrderType     @default(dineIn)
+  status               OrderStatus   @default(pending)
+  paymentStatus        PaymentStatus @default(pending)
+  totalAmount          Decimal       @db.Decimal(14, 2)
+  discountAmount       Decimal       @default(0) @db.Decimal(10, 2)
+  taxAmount            Decimal       @default(0) @db.Decimal(10, 2)
+  serviceCharge        Decimal       @default(0) @db.Decimal(12, 2)
+  tipAmount            Decimal       @default(0) @db.Decimal(12, 2)
+  deliveryFee          Decimal       @default(0) @db.Decimal(10, 2)
+  finalAmount          Decimal       @db.Decimal(14, 2)
+  currency             String        @default("VND")
+  estimatedTime        Int?
+  estimatedTimeReadyAt DateTime?
+  promisedAt           DateTime?
+  deliveredAt          DateTime?
+  notes                String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  createdById          String?
+  updatedById          String?
+  deletedById          String?
+  deletedAt            DateTime?
+
+  // delivery-related
+  deliveryZoneId String?
+  deliveryNotes  String?
+  deliveryRating Int?
+
+  restaurant    Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customer      User                 @relation("orders_customer", fields: [customerId], references: [id])
+  createdBy     User?                @relation("orders_created_by", fields: [createdById], references: [id])
+  updatedBy     User?                @relation("orders_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?                @relation("orders_deleted_by", fields: [deletedById], references: [id])
+  address       Address?             @relation(fields: [addressId], references: [id])
+  items         OrderItem[]
+  history       OrderStatusHistory[]
+  payments      Payment[]
+  reviews       Review[]
+  tableOrders   TableOrder[]
+  voucherUsages VoucherUsage[]
+  delivery      Delivery?            @relation("order_delivery")
+  deliveryZone  DeliveryZone?        @relation(fields: [deliveryZoneId], references: [id])
+  taxes         OrderTax?
+  paymentIntent PaymentIntent?
+
+  @@index([restaurantId])
+  @@index([customerId])
+  @@index([status])
+  @@index([orderType])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id                  String        @id @default(uuid())
+  orderId             String
+  menuItemId          String
+  quantity            Int
+  unitPrice           Decimal       @db.Decimal(12, 2)
+  totalPrice          Decimal       @db.Decimal(12, 2)
+  cookingStatus       CookingStatus @default(pending)
+  preparedAt          DateTime?
+  servedAt            DateTime?
+  specialInstructions String?
+  createdAt           DateTime      @default(now())
+  createdById         String?
+  updatedById         String?
+  deletedById         String?
+  deletedAt           DateTime?
+
+  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem  MenuItem          @relation(fields: [menuItemId], references: [id])
+  createdBy User?             @relation("order_items_created_by", fields: [createdById], references: [id])
+  updatedBy User?             @relation("order_items_updated_by", fields: [updatedById], references: [id])
+  deletedBy User?             @relation("order_items_deleted_by", fields: [deletedById], references: [id])
+  options   OrderItemOption[]
+
+  @@index([orderId])
+}
+
+model OrderItemOption {
+  id          String  @id @default(uuid())
+  orderItemId String
+  optionId    String
+  priceDelta  Decimal @default(0) @db.Decimal(12, 2)
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  option    Option    @relation(fields: [optionId], references: [id])
+
+  @@index([orderItemId])
+  @@index([optionId])
+}
+
+model OrderStatusHistory {
+  id              String      @id @default(uuid())
+  orderId         String
+  status          OrderStatus
+  changedByUserId String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [changedByUserId], references: [id])
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  orderId         String
+  amount          Decimal       @db.Decimal(14, 2)
+  currency        String        @default("VND")
+  method          PaymentMethod
+  status          PaymentStatus @default(pending)
+  provider        String?
+  transactionId   String?       @unique
+  gatewayResponse Json?
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  processedById   String?
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  processedBy User?    @relation("payments_processed_by", fields: [processedById], references: [id])
+  createdBy   User?    @relation("payments_created_by", fields: [createdById], references: [id])
+  updatedBy   User?    @relation("payments_updated_by", fields: [updatedById], references: [id])
+  deletedBy   User?    @relation("payments_deleted_by", fields: [deletedById], references: [id])
+  refunds     Refund[]
+
+  // Restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  // restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId String?
+
+  @@index([orderId])
+  @@index([status])
+  @@index([method])
+}
+
+model Refund {
+  id          String       @id @default(uuid())
+  paymentId   String
+  amount      Decimal      @db.Decimal(14, 2)
+  reason      String?
+  status      RefundStatus @default(processing)
+  providerRef String?
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("refunds_created_by", fields: [createdById], references: [id])
+  updatedBy User?   @relation("refunds_updated_by", fields: [updatedById], references: [id])
+  deletedBy User?   @relation("refunds_deleted_by", fields: [deletedById], references: [id])
+
+  @@index([paymentId])
+}
+
+model PaymentIntent {
+  id           String              @id @default(uuid())
+  orderId      String              @unique
+  provider     String
+  clientSecret String?
+  externalId   String?             @unique
+  status       PaymentIntentStatus
+  metadata     Json?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("payment_intents_created_by", fields: [createdById], references: [id])
+  updatedBy User? @relation("payment_intents_updated_by", fields: [updatedById], references: [id])
+  deletedBy User? @relation("payment_intents_deleted_by", fields: [deletedById], references: [id])
+}
+
+model Review {
+  id           String       @id @default(uuid())
+  customerId   String
+  restaurantId String?
+  orderId      String?
+  menuItemId   String?
+  rating       Int
+  title        String?
+  content      String?
+  photos       String[]
+  status       ReviewStatus @default(active)
+  response     String?
+  respondedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  customer   User        @relation("reviews_customer", fields: [customerId], references: [id])
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+  order      Order?      @relation(fields: [orderId], references: [id])
+  menuItem   MenuItem?   @relation(fields: [menuItemId], references: [id])
+  createdBy  User?       @relation("reviews_created_by", fields: [createdById], references: [id])
+  updatedBy  User?       @relation("reviews_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?       @relation("reviews_deleted_by", fields: [deletedById], references: [id])
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([rating])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Voucher {
+  id            String              @id @default(uuid())
+  code          String              @unique
+  name          String
+  description   String?
+  discountType  VoucherDiscountType
+  discountValue Decimal             @db.Decimal(12, 2)
+  minOrderValue Decimal?            @db.Decimal(12, 2)
+  maxDiscount   Decimal?            @db.Decimal(12, 2)
+  restaurantId  String?
+  startDate     DateTime
+  endDate       DateTime
+  usageLimit    Int?
+  usedCount     Int                 @default(0)
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  createdById   String?
+  updatedById   String?
+  deletedById   String?
+  deletedAt     DateTime?
+
+  restaurant Restaurant?    @relation(fields: [restaurantId], references: [id])
+  createdBy  User?          @relation("vouchers_created_by", fields: [createdById], references: [id])
+  updatedBy  User?          @relation("vouchers_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?          @relation("vouchers_deleted_by", fields: [deletedById], references: [id])
+  usages     VoucherUsage[]
+
+  @@index([restaurantId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+}
+
+model VoucherUsage {
+  id        String   @id @default(uuid())
+  voucherId String
+  userId    String
+  orderId   String?
+  usedAt    DateTime @default(now())
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  @@index([voucherId])
+  @@index([userId])
+  @@index([usedAt])
+}
+
+model Promotion {
+  id               String        @id @default(uuid())
+  restaurantId     String
+  name             String
+  description      String?
+  type             PromotionType
+  discountValue    Decimal       @db.Decimal(12, 2)
+  conditions       Json?
+  timeRestrictions Json?
+  isActive         Boolean       @default(true)
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  createdById      String?
+  updatedById      String?
+  deletedById      String?
+  deletedAt        DateTime?
+
+  restaurant Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?               @relation("promotions_created_by", fields: [createdById], references: [id])
+  updatedBy  User?               @relation("promotions_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?               @relation("promotions_deleted_by", fields: [deletedById], references: [id])
+  menuItems  PromotionMenuItem[]
+
+  @@index([restaurantId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+}
+
+model PromotionMenuItem {
+  id          String @id @default(uuid())
+  promotionId String
+  menuItemId  String
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  menuItem  MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@unique([promotionId, menuItemId])
+  @@index([menuItemId])
+}
+
+/**
+ * =========================
+ * TAX
+ * =========================
+ */
+model TaxRate {
+  id           String    @id @default(uuid())
+  restaurantId String
+  name         String
+  ratePct      Decimal   @db.Decimal(5, 2) // ví dụ 10.00 (%)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("tax_rates_created_by", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("tax_rates_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?      @relation("tax_rates_deleted_by", fields: [deletedById], references: [id])
+  orderTaxes OrderTax[]
+
+  @@index([restaurantId])
+  @@index([isActive])
+}
+
+model OrderTax {
+  id        String  @id @default(uuid())
+  orderId   String  @unique
+  taxRateId String
+  amount    Decimal @db.Decimal(12, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  taxRate TaxRate @relation(fields: [taxRateId], references: [id])
+}
+
+/**
+ * =========================
+ * DELIVERY (Realtime tracking)
+ * =========================
+ */
+
+model DeliveryStaff {
+  id               String              @id @default(uuid())
+  userId           String
+  vehicleType      DeliveryVehicle
+  licensePlate     String?
+  status           DeliveryStaffStatus @default(available)
+  currentZone      String?
+  currentLatitude  Decimal?            @db.Decimal(10, 7)
+  currentLongitude Decimal?            @db.Decimal(10, 7)
+  maxCapacity      Int                 @default(5)
+  rating           Decimal?            @db.Decimal(3, 2)
+  totalDeliveries  Int                 @default(0)
+  totalDistanceKm  Decimal             @default(0) @db.Decimal(10, 2)
+  totalEarnings    Decimal             @default(0) @db.Decimal(14, 2)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  createdById      String?
+  updatedById      String?
+  deletedById      String?
+  deletedAt        DateTime?
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("delivery_staff_created_by", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("delivery_staff_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?      @relation("delivery_staff_deleted_by", fields: [deletedById], references: [id])
+  deliveries Delivery[] @relation("delivery_staff_assign")
+
+  @@unique([userId])
+}
+
+model Delivery {
+  id                   String         @id @default(uuid())
+  orderId              String
+  restaurantId         String
+  deliveryStaffId      String?
+  status               DeliveryStatus @default(assigned)
+  assignedAt           DateTime?
+  pickedUpAt           DateTime?
+  deliveredAt          DateTime?
+  estimatedTimeMin     Int?
+  actualTimeMin        Int?
+  deliveryFee          Decimal        @db.Decimal(10, 2)
+  distanceKm           Decimal?       @db.Decimal(8, 2)
+  destinationLatitude  Decimal?       @db.Decimal(10, 7)
+  destinationLongitude Decimal?       @db.Decimal(10, 7)
+  notes                String?
+  customerRating       Int?
+  customerFeedback     String?
+  deliveryPhoto        String?
+
+  // Real-time tracking for mobile app
+  currentLatitude  Decimal?  @db.Decimal(10, 7)
+  currentLongitude Decimal?  @db.Decimal(10, 7)
+  lastLocationAt   DateTime?
+  isTrackingActive Boolean   @default(true)
+  trackingCode     String?   @unique // For customer to track delivery
+
+  // Delivery route and timing
+  routePolyline    String? // Encoded polyline for route
+  estimatedArrival DateTime?
+  actualArrival    DateTime?
+
+  // Customer notifications
+  customerNotifiedAt DateTime?
+  staffNotifiedAt    DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  order         Order              @relation("order_delivery", fields: [orderId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  deliveryStaff DeliveryStaff?     @relation("delivery_staff_assign", fields: [deliveryStaffId], references: [id])
+  createdBy     User?              @relation("deliveries_created_by", fields: [createdById], references: [id])
+  updatedBy     User?              @relation("deliveries_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?              @relation("deliveries_deleted_by", fields: [deletedById], references: [id])
+  locations     DeliveryLocation[]
+
+  @@unique([orderId])
+  @@index([restaurantId])
+  @@index([deliveryStaffId])
+  @@index([status])
+  @@index([trackingCode])
+  @@index([isTrackingActive])
+}
+
+model DeliveryLocation {
+  id                   String   @id @default(uuid())
+  deliveryId           String
+  latitude             Decimal  @db.Decimal(10, 7)
+  longitude            Decimal  @db.Decimal(10, 7)
+  accuracyMeters       Decimal? @db.Decimal(6, 2)
+  headingDegrees       Decimal? @db.Decimal(5, 1)
+  speedMetersPerSecond Decimal? @db.Decimal(6, 2)
+  capturedAt           DateTime @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId, capturedAt])
+}
+
+model DeliveryZone {
+  id             String    @id @default(uuid())
+  restaurantId   String
+  name           String
+  polygonGeo     Json
+  deliveryFee    Decimal   @db.Decimal(10, 2)
+  minOrderAmount Decimal?  @db.Decimal(10, 2)
+  maxDistanceKm  Decimal?  @db.Decimal(8, 2)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+  deletedAt      DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("delivery_zones_created_by", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("delivery_zones_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?      @relation("delivery_zones_deleted_by", fields: [deletedById], references: [id])
+  orders     Order[]
+
+  @@index([restaurantId])
+  @@index([isActive])
+}
+
+/**
+ * =========================
+ * INVENTORY / WAREHOUSE
+ * =========================
+ */
+
+model Warehouse {
+  id           String    @id @default(uuid())
+  restaurantId String
+  name         String
+  address      String?
+  contactName  String?
+  contactPhone String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant    Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy     User?               @relation("warehouses_created_by", fields: [createdById], references: [id])
+  updatedBy     User?               @relation("warehouses_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?               @relation("warehouses_deleted_by", fields: [deletedById], references: [id])
+  balances      InventoryBalance[]
+  receipts      WarehouseReceipt[]
+  issues        WarehouseIssue[]
+  transfersFrom WarehouseTransfer[] @relation("warehouse_transfer_from")
+  transfersTo   WarehouseTransfer[] @relation("warehouse_transfer_to")
+
+  @@index([restaurantId])
+  @@index([isActive])
+}
+
+model InventoryItem {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  category       String?
+  unit           InventoryUnit @default(kg)
+  supplierName   String?
+  unitCost       Decimal?      @db.Decimal(10, 2)
+  sku            String?       @unique
+  barcode        String?
+  isActive       Boolean       @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy              User?                   @relation("inventory_items_created_by", fields: [createdById], references: [id])
+  updatedBy              User?                   @relation("inventory_items_updated_by", fields: [updatedById], references: [id])
+  deletedBy              User?                   @relation("inventory_items_deleted_by", fields: [deletedById], references: [id])
+  transactions           InventoryTransaction[]
+  recipeIngredients      RecipeIngredient[]
+  supplierItems          SupplierItem[]
+  purchaseOrderItems     PurchaseOrderItem[]
+  receiptItems           WarehouseReceiptItem[]
+  issueItems             WarehouseIssueItem[]
+  balances               InventoryBalance[]
+  retailProducts         RetailProduct[]
+  warehouseTransferItems WarehouseTransferItem[]
+
+  @@index([organizationId])
+  @@index([unit])
+  @@index([category])
+  @@index([isActive])
+}
+
+model InventoryTransaction {
+  id              String                   @id @default(uuid())
+  restaurantId    String
+  inventoryItemId String
+  type            InventoryTransactionType
+  quantity        Decimal                  @db.Decimal(12, 2)
+  totalCost       Decimal?                 @db.Decimal(12, 2)
+  unitCost        Decimal?                 @db.Decimal(10, 2)
+  invoiceNumber   String?
+  supplierName    String?
+  notes           String?
+  createdAt       DateTime                 @default(now())
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  createdBy     User?         @relation("inventory_transactions_created_by", fields: [createdById], references: [id])
+  updatedBy     User?         @relation("inventory_transactions_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?         @relation("inventory_transactions_deleted_by", fields: [deletedById], references: [id])
+
+  @@index([restaurantId])
+  @@index([inventoryItemId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model InventoryBalance {
+  id              String    @id @default(uuid())
+  restaurantId    String
+  warehouseId     String
+  inventoryItemId String
+  balanceDate     DateTime
+  openingBalance  Decimal   @db.Decimal(12, 2)
+  receivedQty     Decimal   @default(0) @db.Decimal(12, 2)
+  issuedQty       Decimal   @default(0) @db.Decimal(12, 2)
+  adjustedQty     Decimal   @default(0) @db.Decimal(12, 2)
+  closingBalance  Decimal   @db.Decimal(12, 2)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  createdBy     User?         @relation("inventory_balances_created_by", fields: [createdById], references: [id])
+  updatedBy     User?         @relation("inventory_balances_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?         @relation("inventory_balances_deleted_by", fields: [deletedById], references: [id])
+
+  @@unique([restaurantId, warehouseId, inventoryItemId, balanceDate])
+  @@index([restaurantId])
+  @@index([warehouseId])
+  @@index([inventoryItemId])
+  @@index([balanceDate])
+}
+
+/**
+ * =========================
+ * SUPPLY CHAIN (Suppliers / Purchase Orders)
+ * =========================
+ */
+
+model Supplier {
+  id             String         @id @default(uuid())
+  organizationId String
+  restaurantId   String
+  name           String
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  taxCode        String?
+  paymentTerms   String?
+  rating         Decimal?       @db.Decimal(3, 2)
+  status         SupplierStatus @default(active)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  createdById    String?
+  updatedById    String?
+  deletedById    String?
+  deletedAt      DateTime?
+
+  restaurant        Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy         User?              @relation("suppliers_created_by", fields: [createdById], references: [id])
+  updatedBy         User?              @relation("suppliers_updated_by", fields: [updatedById], references: [id])
+  deletedBy         User?              @relation("suppliers_deleted_by", fields: [deletedById], references: [id])
+  supplierItems     SupplierItem[]
+  purchaseOrders    PurchaseOrder[]
+  warehouseReceipts WarehouseReceipt[]
+
+  @@index([restaurantId])
+  @@index([status])
+  @@index([name])
+}
+
+model SupplierItem {
+  id              String    @id @default(uuid())
+  supplierId      String
+  inventoryItemId String
+  supplierSku     String?
+  unitPrice       Decimal   @db.Decimal(10, 2)
+  minOrderQty     Decimal?  @db.Decimal(12, 2)
+  leadTimeDays    Int?
+  isPreferred     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  supplier      Supplier      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  createdBy     User?         @relation("supplier_items_created_by", fields: [createdById], references: [id])
+  updatedBy     User?         @relation("supplier_items_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?         @relation("supplier_items_deleted_by", fields: [deletedById], references: [id])
+
+  @@unique([supplierId, inventoryItemId])
+  @@index([supplierId])
+  @@index([inventoryItemId])
+  @@index([isPreferred])
+}
+
+model PurchaseOrder {
+  id           String              @id @default(uuid())
+  supplierId   String
+  restaurantId String
+  orderNumber  String              @unique
+  status       PurchaseOrderStatus @default(draft)
+  orderDate    DateTime
+  expectedDate DateTime?
+  receivedDate DateTime?
+  totalAmount  Decimal             @db.Decimal(14, 2)
+  notes        String?
+  createdById  String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  restaurant Restaurant          @relation(fields: [restaurantId], references: [id])
+  createdBy  User                @relation(fields: [createdById], references: [id])
+  updatedBy  User?               @relation("purchase_orders_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?               @relation("purchase_orders_deleted_by", fields: [deletedById], references: [id])
+  items      PurchaseOrderItem[]
+
+  @@index([supplierId])
+  @@index([restaurantId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(uuid())
+  purchaseOrderId String
+  inventoryItemId String
+  quantity        Decimal @db.Decimal(12, 2)
+  unitPrice       Decimal @db.Decimal(10, 2)
+  totalPrice      Decimal @db.Decimal(12, 2)
+  receivedQty     Decimal @default(0) @db.Decimal(12, 2)
+  notes           String?
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([inventoryItemId])
+}
+
+/**
+ * =========================
+ * WAREHOUSE DOCUMENTS
+ * =========================
+ */
+
+model WarehouseReceipt {
+  id            String                 @id @default(uuid())
+  restaurantId  String
+  warehouseId   String
+  receiptNumber String                 @unique
+  supplierId    String?
+  receiptDate   DateTime
+  status        WarehouseReceiptStatus @default(draft)
+  totalAmount   Decimal                @db.Decimal(14, 2)
+  notes         String?
+  createdById   String
+  approvedById  String?
+  approvedAt    DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  updatedById   String?
+  deletedById   String?
+  deletedAt     DateTime?
+
+  restaurant Restaurant             @relation(fields: [restaurantId], references: [id])
+  warehouse  Warehouse              @relation(fields: [warehouseId], references: [id])
+  supplier   Supplier?              @relation(fields: [supplierId], references: [id])
+  createdBy  User                   @relation("warehouse_receipts_created_by", fields: [createdById], references: [id])
+  approvedBy User?                  @relation("warehouse_receipts_approved_by", fields: [approvedById], references: [id])
+  updatedBy  User?                  @relation("warehouse_receipts_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?                  @relation("warehouse_receipts_deleted_by", fields: [deletedById], references: [id])
+  items      WarehouseReceiptItem[]
+
+  @@index([restaurantId])
+  @@index([warehouseId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([receiptDate])
+}
+
+model WarehouseReceiptItem {
+  id              String    @id @default(uuid())
+  receiptId       String
+  inventoryItemId String
+  quantity        Decimal   @db.Decimal(12, 2)
+  unitPrice       Decimal   @db.Decimal(10, 2)
+  totalPrice      Decimal   @db.Decimal(12, 2)
+  expiryDate      DateTime?
+  batchNumber     String?
+  notes           String?
+
+  receipt       WarehouseReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem    @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([receiptId])
+  @@index([inventoryItemId])
+}
+
+model WarehouseIssue {
+  id           String                @id @default(uuid())
+  restaurantId String
+  warehouseId  String
+  issueNumber  String                @unique
+  issueDate    DateTime
+  status       WarehouseIssueStatus  @default(draft)
+  purpose      WarehouseIssuePurpose
+  totalAmount  Decimal               @db.Decimal(14, 2)
+  notes        String?
+  createdById  String
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant Restaurant           @relation(fields: [restaurantId], references: [id])
+  warehouse  Warehouse            @relation(fields: [warehouseId], references: [id])
+  createdBy  User                 @relation("warehouse_issues_created_by", fields: [createdById], references: [id])
+  approvedBy User?                @relation("warehouse_issues_approved_by", fields: [approvedById], references: [id])
+  updatedBy  User?                @relation("warehouse_issues_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?                @relation("warehouse_issues_deleted_by", fields: [deletedById], references: [id])
+  items      WarehouseIssueItem[]
+
+  @@index([restaurantId])
+  @@index([warehouseId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([purpose])
+}
+
+model WarehouseIssueItem {
+  id              String  @id @default(uuid())
+  issueId         String
+  inventoryItemId String
+  quantity        Decimal @db.Decimal(12, 2)
+  unitPrice       Decimal @db.Decimal(10, 2)
+  totalPrice      Decimal @db.Decimal(12, 2)
+  batchNumber     String?
+  notes           String?
+
+  issue         WarehouseIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem  @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([issueId])
+  @@index([inventoryItemId])
+}
+
+/**
+ * =========================
+ * WAREHOUSE TRANSFER (kho -> kho)
+ * =========================
+ */
+model WarehouseTransfer {
+  id              String                  @id @default(uuid())
+  restaurantId    String
+  fromWarehouseId String
+  toWarehouseId   String
+  transferNumber  String                  @unique
+  status          WarehouseTransferStatus @default(draft)
+  transferDate    DateTime
+  notes           String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  createdById     String?
+  updatedById     String?
+  deletedById     String?
+  deletedAt       DateTime?
+
+  restaurant Restaurant              @relation(fields: [restaurantId], references: [id])
+  from       Warehouse               @relation("warehouse_transfer_from", fields: [fromWarehouseId], references: [id])
+  to         Warehouse               @relation("warehouse_transfer_to", fields: [toWarehouseId], references: [id])
+  createdBy  User?                   @relation("warehouse_transfers_created_by", fields: [createdById], references: [id])
+  updatedBy  User?                   @relation("warehouse_transfers_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?                   @relation("warehouse_transfers_deleted_by", fields: [deletedById], references: [id])
+  items      WarehouseTransferItem[]
+
+  @@index([restaurantId])
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
+}
+
+model WarehouseTransferItem {
+  id              String  @id @default(uuid())
+  transferId      String
+  inventoryItemId String
+  quantity        Decimal @db.Decimal(12, 2)
+  notes           String?
+
+  transfer      WarehouseTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem     @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([transferId])
+  @@index([inventoryItemId])
+}
+
+/**
+ * =========================
+ * SCHEDULE / ATTENDANCE
+ * =========================
+ */
+
+model StaffSchedule {
+  id           String              @id @default(uuid())
+  staffId      String
+  restaurantId String
+  shiftDate    DateTime
+  shiftType    StaffShiftType
+  startTime    DateTime
+  endTime      DateTime
+  status       StaffScheduleStatus @default(scheduled)
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant Restaurant        @relation(fields: [restaurantId], references: [id])
+  staff      User              @relation("staff_schedules_staff", fields: [staffId], references: [id])
+  createdBy  User?             @relation("staff_schedules_created_by", fields: [createdById], references: [id])
+  updatedBy  User?             @relation("staff_schedules_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?             @relation("staff_schedules_deleted_by", fields: [deletedById], references: [id])
+  attendance StaffAttendance[]
+
+  @@unique([staffId, shiftDate, shiftType])
+  @@index([restaurantId])
+  @@index([shiftDate])
+  @@index([status])
+}
+
+model StaffAttendance {
+  id            String    @id @default(uuid())
+  staffId       String
+  restaurantId  String
+  scheduleId    String?
+  workDate      DateTime
+  checkInTime   DateTime?
+  checkOutTime  DateTime?
+  breakMinutes  Int?
+  overtimeHours Decimal?  @db.Decimal(4, 2)
+  totalHours    Decimal?  @db.Decimal(4, 2)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdById   String?
+  updatedById   String?
+  deletedById   String?
+  deletedAt     DateTime?
+
+  restaurant Restaurant     @relation(fields: [restaurantId], references: [id])
+  schedule   StaffSchedule? @relation(fields: [scheduleId], references: [id])
+  staff      User           @relation("staff_attendance_staff", fields: [staffId], references: [id])
+  createdBy  User?          @relation("staff_attendance_created_by", fields: [createdById], references: [id])
+  updatedBy  User?          @relation("staff_attendance_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?          @relation("staff_attendance_deleted_by", fields: [deletedById], references: [id])
+
+  @@unique([staffId, workDate])
+  @@index([restaurantId])
+  @@index([workDate])
+}
+
+/**
+ * =========================
+ * REPORTING / ANALYTICS
+ * =========================
+ */
+
+model RevenueReport {
+  id               String            @id @default(uuid())
+  restaurantId     String
+  reportDate       DateTime
+  reportType       RevenueReportType
+  totalRevenue     Decimal           @db.Decimal(14, 2)
+  totalOrders      Int               @default(0)
+  totalCustomers   Int               @default(0)
+  avgOrderValue    Decimal?          @db.Decimal(12, 2)
+  dineInRevenue    Decimal?          @db.Decimal(14, 2)
+  takeawayRevenue  Decimal?          @db.Decimal(14, 2)
+  deliveryRevenue  Decimal?          @db.Decimal(14, 2)
+  popularItems     Json?
+  paymentBreakdown Json?
+  hourlyBreakdown  Json?
+  createdAt        DateTime          @default(now())
+  createdById      String?
+  updatedById      String?
+  deletedById      String?
+  deletedAt        DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("revenue_reports_created_by", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("revenue_reports_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?      @relation("revenue_reports_deleted_by", fields: [deletedById], references: [id])
+
+  @@unique([restaurantId, reportDate, reportType])
+  @@index([restaurantId])
+  @@index([reportDate])
+  @@index([reportType])
+}
+
+model KpiMetric {
+  id           String    @id @default(uuid())
+  restaurantId String
+  metricName   String
+  metricValue  Decimal   @db.Decimal(15, 4)
+  metricDate   DateTime
+  periodType   KpiPeriod
+  createdAt    DateTime  @default(now())
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("kpi_metrics_created_by", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("kpi_metrics_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?      @relation("kpi_metrics_deleted_by", fields: [deletedById], references: [id])
+
+  @@unique([restaurantId, metricName, metricDate, periodType])
+  @@index([restaurantId])
+  @@index([metricDate])
+  @@index([metricName])
+  @@index([periodType])
+}
+
+model AnalyticsEventLog {
+  id           String         @id @default(uuid())
+  eventType    AnalyticsEvent
+  entityType   String
+  entityId     String
+  restaurantId String?
+  userId       String?
+  metadata     Json?
+  createdAt    DateTime       @default(now())
+
+  @@index([eventType])
+  @@index([entityType])
+  @@index([restaurantId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/**
+ * =========================
+ * NOTIFICATION / SYSTEM / AUDIT
+ * =========================
+ */
+
+model Notification {
+  id          String               @id @default(uuid())
+  userId      String
+  title       String
+  message     String
+  type        NotificationType
+  priority    NotificationPriority @default(medium)
+  status      NotificationStatus   @default(unread)
+  relatedId   String?
+  relatedType String?
+  actionUrl   String?
+  metadata    Json?
+  readAt      DateTime?
+  scheduledAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("notifications_created_by", fields: [createdById], references: [id])
+  updatedBy User? @relation("notifications_updated_by", fields: [updatedById], references: [id])
+  deletedBy User? @relation("notifications_deleted_by", fields: [deletedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model SystemConfig {
+  id          String    @id @default(uuid())
+  configKey   String    @unique
+  configValue Json
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  createdBy User? @relation("system_configs_created_by", fields: [createdById], references: [id])
+  updatedBy User? @relation("system_configs_updated_by", fields: [updatedById], references: [id])
+  deletedBy User? @relation("system_configs_deleted_by", fields: [deletedById], references: [id])
+
+  @@index([isActive])
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  tableName String
+  recordId  String
+  action    AuditAction
+  oldValues Json?
+  newValues Json?
+  userId    String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([tableName])
+  @@index([recordId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+/**
+ * =========================
+ * USER STATS
+ * =========================
+ */
+
+model UserStatistics {
+  id                     String    @id @default(uuid())
+  userId                 String    @unique
+  totalReservations      Int       @default(0)
+  successfulReservations Int       @default(0)
+  cancelledReservations  Int       @default(0)
+  noShowReservations     Int       @default(0)
+  totalOrders            Int       @default(0)
+  completedOrders        Int       @default(0)
+  cancelledOrders        Int       @default(0)
+  totalSpent             Decimal   @default(0) @db.Decimal(14, 2)
+  loyaltyPoints          Int       @default(0)
+  favoriteRestaurantId   String?
+  lastOrderDate          DateTime?
+  lastReservationDate    DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([favoriteRestaurantId])
+}
+
+/**
+ * =========================
+ * STORAGE / ASSET / PUSH
+ * =========================
+ */
+
+model Asset {
+  id           String        @id @default(uuid())
+  bucket       StorageBucket
+  path         String
+  fileName     String
+  originalName String
+  mimeType     String?
+  fileType     FileType?
+  sizeBytes    Int?
+  width        Int? // For images
+  height       Int? // For images
+  duration     Int? // For videos/audio (seconds)
+  isPublic     Boolean       @default(false)
+  createdBy    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Supabase Storage integration
+  supabasePath   String?   @unique // Full path in Supabase Storage
+  supabaseFileId String?   @unique // Supabase file ID
+  cdnUrl         String? // CDN URL for public access
+  signedUrl      String? // Temporary signed URL
+  expiresAt      DateTime? // For signed URLs
+
+  // Relations
+  createdByUser User? @relation("assets_created_by", fields: [createdBy], references: [id])
+
+  @@unique([bucket, path])
+  @@index([bucket])
+  @@index([fileType])
+  @@index([isPublic])
+  @@index([createdBy])
+  @@index([createdAt])
+}
+
+model DeviceToken {
+  id        String         @id @default(uuid())
+  userId    String
+  token     String         @unique
+  platform  DevicePlatform
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/**
+ * =========================
+ * MARKETPLACE (Chợ món & chợ nguyên liệu)
+ * =========================
+ */
+
+// Marketplace: Bán lẻ nguyên liệu từ kho (B2C) + Món ăn từ nhà hàng
+model RetailProduct {
+  id               String   @id @default(uuid())
+  inventoryItemId  String?
+  restaurantId     String?
+  menuItemId       String? // For restaurant food items
+  name             String
+  slug             String   @unique
+  description      String?
+  shortDescription String?
+  imageUrls        String[]
+  price            Decimal  @db.Decimal(12, 2)
+  compareAtPrice   Decimal? @db.Decimal(12, 2)
+  costPrice        Decimal? @db.Decimal(12, 2) // For profit calculation
+  isActive         Boolean  @default(true)
+  stockQty         Decimal? @db.Decimal(12, 2)
+
+  // Product categorization
+  category    String?
+  tags        String[]
+  allergens   String[]
+  dietaryInfo String[]
+  calories    Int?
+  weight      Decimal? @db.Decimal(8, 2) // In grams
+  unit        String? // piece, kg, liter, etc.
+
+  // Marketplace specific
+  isFeatured   Boolean  @default(false)
+  isBestSeller Boolean  @default(false)
+  rating       Decimal? @db.Decimal(3, 2)
+  reviewCount  Int      @default(0)
+  soldCount    Int      @default(0)
+
+  // Delivery info
+  isDeliverable   Boolean  @default(true)
+  deliveryTimeMin Int? // Estimated delivery time
+  minOrderQty     Decimal? @db.Decimal(8, 2)
+  maxOrderQty     Decimal? @db.Decimal(8, 2)
+
+  // SEO & Marketing
+  metaTitle       String?
+  metaDescription String?
+  keywords        String[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  deletedById String?
+  deletedAt   DateTime?
+
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  restaurant    Restaurant?    @relation(fields: [restaurantId], references: [id])
+  menuItem      MenuItem?      @relation(fields: [menuItemId], references: [id])
+  createdBy     User?          @relation("retail_products_created_by", fields: [createdById], references: [id])
+  updatedBy     User?          @relation("retail_products_updated_by", fields: [updatedById], references: [id])
+  deletedBy     User?          @relation("retail_products_deleted_by", fields: [deletedById], references: [id])
+  cartItems     CartItem[]
+
+  @@index([restaurantId])
+  @@index([inventoryItemId])
+  @@index([menuItemId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([isBestSeller])
+  @@index([category])
+  @@index([rating])
+  @@index([price])
+}
+
+// Giỏ hàng cho khách - hỗ trợ cả menu items và retail products
+model Cart {
+  id           String    @id @default(uuid())
+  userId       String
+  restaurantId String? // Optional for marketplace items
+  sessionId    String? // For guest users
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  updatedById  String?
+  deletedById  String?
+  deletedAt    DateTime?
+
+  // Cart totals (calculated)
+  subtotal    Decimal @default(0) @db.Decimal(14, 2)
+  taxAmount   Decimal @default(0) @db.Decimal(12, 2)
+  deliveryFee Decimal @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal @default(0) @db.Decimal(14, 2)
+
+  // Cart metadata
+  itemCount    Int       @default(0)
+  lastActivity DateTime  @default(now())
+  expiresAt    DateTime? // For guest carts
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User?       @relation("carts_created_by", fields: [createdById], references: [id])
+  updatedBy  User?       @relation("carts_updated_by", fields: [updatedById], references: [id])
+  deletedBy  User?       @relation("carts_deleted_by", fields: [deletedById], references: [id])
+  items      CartItem[]
+
+  @@unique([userId, restaurantId])
+  @@index([sessionId])
+  @@index([expiresAt])
+}
+
+model CartItem {
+  id     String @id @default(uuid())
+  cartId String
+
+  // Chỉ được chọn MỘT trong hai: menuItemId HOẶC retailProductId
+  menuItemId      String?
+  retailProductId String?
+
+  quantity   Int     @default(1)
+  unitPrice  Decimal @db.Decimal(12, 2)
+  totalPrice Decimal @db.Decimal(12, 2) // quantity * unitPrice + options
+  notes      String?
+
+  // Item metadata
+  itemName  String? // Cached for performance
+  itemImage String? // Cached for performance
+
+  // Special instructions
+  specialInstructions String?
+  isGift              Boolean @default(false)
+  giftMessage         String?
+
+  cart          Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem?      @relation(fields: [menuItemId], references: [id])
+  retailProduct RetailProduct? @relation(fields: [retailProductId], references: [id])
+
+  // Tuỳ chọn chỉ áp dụng cho món (MenuItem). Với RetailProduct thường không có options.
+  options CartItemOption[]
+
+  @@index([cartId])
+  @@index([menuItemId])
+  @@index([retailProductId])
+}
+
+model CartItemOption {
+  id         String  @id @default(uuid())
+  cartItemId String
+  optionId   String
+  priceDelta Decimal @default(0) @db.Decimal(12, 2)
+
+  cartItem CartItem @relation(fields: [cartItemId], references: [id], onDelete: Cascade)
+  option   Option   @relation(fields: [optionId], references: [id])
+
+  @@index([cartItemId])
+  @@index([optionId])
+}
