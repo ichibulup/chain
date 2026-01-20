@@ -4,14 +4,21 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client/index'
 
 dotenv.config({
-	path: ".env.local",
-	override: true,
-	debug: false,
-	quiet: true
+  path: ".env.local",
+  override: true,
+  debug: false,
+  quiet: true
 })
 // const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_DEMO_URL}`;
-const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_DIRECT_URL}`;
-// const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_URL}`
+const pooledUrl = process.env.EXPRESS_PRIVATE_SUPABASE_URL;
+const directUrl = process.env.EXPRESS_PRIVATE_SUPABASE_DIRECT_URL;
+const connectionString = (process.env.VERCEL || process.env.NODE_ENV === "production")
+  ? (pooledUrl || directUrl)
+  : (directUrl || pooledUrl);
+
+if (!connectionString) {
+  throw new Error("Missing Supabase connection string. Set EXPRESS_PRIVATE_SUPABASE_URL or EXPRESS_PRIVATE_SUPABASE_DIRECT_URL.");
+}
 
 const adapter = new PrismaPg({ connectionString })
 const prisma = new PrismaClient({ adapter })
