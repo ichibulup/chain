@@ -3,22 +3,59 @@ import dotenv from "dotenv";
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client/index'
 
-dotenv.config({
-  path: ".env.local",
-  override: true,
-  debug: false,
-  quiet: true
-})
+const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
+
+if (!isProduction) {
+  dotenv.config({
+    path: ".env.local",
+    override: true,
+    debug: false,
+    quiet: true
+  })
+}
+
+const logConnectionInfo = (label: string, url?: string) => {
+  if (!url) {
+    console.warn(`[prisma] ${label}: not set`);
+    return;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const dbName = parsed.pathname.replace("/", "") || "(default)";
+    const sslmode = parsed.searchParams.get("sslmode") ?? "default";
+    const pgbouncer = parsed.searchParams.get("pgbouncer") ?? "false";
+    const port = parsed.port || "5432";
+    const user = parsed.username || "unknown";
+
+    console.log(
+      `[prisma] ${label}: host=${parsed.hostname} port=${port} db=${dbName} user=${user} sslmode=${sslmode} pgbouncer=${pgbouncer}`
+    );
+  } catch (error) {
+    console.warn(`[prisma] ${label}: invalid connection string`);
+  }
+};
 // const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_DEMO_URL}`;
 const pooledUrl = process.env.EXPRESS_PRIVATE_SUPABASE_URL;
 const directUrl = process.env.EXPRESS_PRIVATE_SUPABASE_DIRECT_URL;
-const connectionString = (process.env.VERCEL || process.env.NODE_ENV === "production")
+const connectionString = isProduction
   ? (pooledUrl || directUrl)
   : (directUrl || pooledUrl);
 
 if (!connectionString) {
   throw new Error("Missing Supabase connection string. Set EXPRESS_PRIVATE_SUPABASE_URL or EXPRESS_PRIVATE_SUPABASE_DIRECT_URL.");
 }
+
+const selectedSource = connectionString === pooledUrl
+  ? "EXPRESS_PRIVATE_SUPABASE_URL"
+  : connectionString === directUrl
+    ? "EXPRESS_PRIVATE_SUPABASE_DIRECT_URL"
+    : "unknown";
+
+console.log(`[prisma] runtime: node_env=${process.env.NODE_ENV ?? "unknown"} vercel=${process.env.VERCEL ?? "false"} selected=${selectedSource}`);
+logConnectionInfo("EXPRESS_PRIVATE_SUPABASE_URL", pooledUrl);
+logConnectionInfo("EXPRESS_PRIVATE_SUPABASE_DIRECT_URL", directUrl);
+logConnectionInfo("selected", connectionString);
 
 const adapter = new PrismaPg({ connectionString })
 const prisma = new PrismaClient({ adapter })
