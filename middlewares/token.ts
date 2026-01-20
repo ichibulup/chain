@@ -101,7 +101,7 @@ function readSupabaseAuthCookie(req: Request): SupabaseSessionCookie | null {
   for (const [name, value] of Object.entries(cookies)) {
     const match = name.match(chunkRegex);
     if (!match) continue;
-    const baseName = match[1];
+    const baseName: string = match[1] || "";
     const index = match[2] ? Number(match[2]) : 0;
     if (!Number.isFinite(index)) continue;
     if (!chunksByCookie.has(baseName)) {
