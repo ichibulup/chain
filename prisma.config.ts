@@ -16,9 +16,7 @@ export default defineConfig({
   },
   // engine: "classic",
   datasource: {
-    // url: env("EXPRESS_PRIVATE_SUPABASE_URL"),
-    url: env("EXPRESS_PRIVATE_SUPABASE_DIRECT_URL"),
-    // url: env("EXPRESS_PRIVATE_SUPABASE_DEMO_URL"),
-    // directUrl: env("EXPRESS_PRIVATE_SUPABASE_DIRECT_URL"),
+    url: env("EXPRESS_PRIVATE_SUPABASE_URL"), // pgBouncer pooling URL
+    directUrl: env("EXPRESS_PRIVATE_SUPABASE_DIRECT_URL"), // Direct URL cho migrations
   },
 });
