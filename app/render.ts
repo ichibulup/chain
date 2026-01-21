@@ -162,6 +162,14 @@ app.use(cors({
 // ================================
 // app.use('/graphql', createGraphQLMiddleware());
 
+app.use(express.static(path.join(process.cwd(), "api")));
+app.get("/favicon.ico", (
+  req: Request,
+  res: Response
+) => {
+  res.sendFile(path.join(process.cwd(), "public", "favicon.ico"));
+});
+// app.get("/favicon.ico", express.static(path.join(__dirname, 'api', 'favicon.ico')));
 // ================================
 // 🛣️ REST API ROUTES (Updated with Supabase Auth)
 // ================================
@@ -248,8 +256,6 @@ app.use((
     message: process.env.EXPRESS_ENV === 'production' ? 'Something went wrong' : error.message
   });
 });
-
-app.use("/favicon.ico", express.static(path.join(__dirname, 'api', 'favicon.ico')));
 
 // ================================
 // 🚀 INITIALIZE REALTIME SERVER

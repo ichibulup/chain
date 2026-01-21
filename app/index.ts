@@ -209,6 +209,14 @@ app.use("@/public", express.static(directory));
 // ================================
 // app.use('/graphql', createGraphQLMiddleware());
 
+app.use(express.static(path.join(process.cwd(), "api")));
+app.get("/favicon.ico", (
+  req: Request,
+  res: Response
+) => {
+  res.sendFile(path.join(process.cwd(), "public", "favicon.ico"));
+});
+
 // ================================
 // 🛣️ REST API ROUTES (Updated with Supabase Auth)
 // ================================
