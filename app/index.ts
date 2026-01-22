@@ -12,13 +12,10 @@ import path from "path";
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cookieParser from "cookie-parser";
-import session from "express-session";
-import rateLimit from 'express-rate-limit';
 import pc from 'picocolors'
 import fs from 'fs';
 import { Logging } from "@/lib/logging";
 import http, { createServer } from "http";
-import { WebSocketServer } from "ws";
 import { createRealtime } from "@/lib/supabase/realtime";
 // import { prisma } from "@/lib/prisma";
 
@@ -134,22 +131,6 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.EXPRESS_JWT_SECRET!,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.EXPRESS_ENV === 'production', // true nếu dùng HTTPS
-    httpOnly: true, // Ngăn JS phía client truy cập
-    maxAge: 1000 * 60 * 60 * 24,
-    sameSite: 'lax',
-    // expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // Thời gian hết hạn cookie
-    // domain: process.env.EXPRESS_CLIENT_URL!, // Tùy chọn: tên miền cookie
-    // secure: true, // Chỉ gửi cookie qua HTTPS
-    // sameSite: 'Lax' // Hoặc 'Strict'. 'None' cần secure: true
-    // path: '/', // Phạm vi cookie (thường là gốc)
-  }
-}));
 // Configure CORS
 // app.use(cors());
 app.use(cors({
@@ -173,34 +154,6 @@ app.use(cors({
 /* STATIC FILES */
 /* UPLOAD MULTER CONFIG */
 
-const directory = path.resolve(__dirname, "..", "public");
-if (!fs.existsSync(directory)) fs.mkdirSync(directory, { recursive: true });
-app.use("@/public", express.static(directory));
-// app.use("@/public", express.static(directory, {
-//   maxAge: '1d',
-//   etag: true,
-// }));
-
-// const storage = multer.diskStorage({
-//   destination: (
-//     req,
-//     file,
-//     cb
-//   ): void => {
-//     cb(null, "assets");
-//   },
-//   filename: (
-//     req,
-//     file,
-//     cb
-//   ): void => {
-//     // cb(null, req.body.name);
-//     cb(null, file.originalname);
-//   },
-// });
-
-// const upload = multer({ storage: storage });
-
 /* ROUTES */
 // ================================
 // 📡 GRAPHQL ENDPOINT SETUP
@@ -209,14 +162,16 @@ app.use("@/public", express.static(directory));
 // ================================
 // app.use('/graphql', createGraphQLMiddleware());
 
-app.use(express.static(path.join(process.cwd(), "api")));
+const directory = path.join(process.cwd(), "api");
+app.use(express.static(directory));
+
 app.get("/favicon.ico", (
   req: Request,
   res: Response
 ) => {
-  res.sendFile(path.join(process.cwd(), "public", "favicon.ico"));
+  res.sendFile(path.join(directory, "favicon.ico"));
 });
-
+// app.get("/favicon.ico", express.static(path.join(__dirname, 'api', 'favicon.ico')));
 // ================================
 // 🛣️ REST API ROUTES (Updated with Supabase Auth)
 // ================================
@@ -264,6 +219,14 @@ app.get('/', (
   req: Request,
   res: Response
 ) => {
+  // res.send('Professor Synapse API is running');
+  res.sendFile(path.join(directory, "index.html"));
+});
+
+app.get('/api', (
+  req: Request,
+  res: Response
+) => {
   res.send('Professor Synapse API is running');
 });
 
@@ -308,101 +271,104 @@ app.use((
 // 🚀 INITIALIZE REALTIME SERVER
 // ================================
 
-const server = createServer(app);
-// const wss = new WebSocketServer({ server })
-// const io = new Server(server, {
-//   cors: {
-//     origin: [
-//       process.env.EXPRESS_PUBLIC_CLIENT_URL!,
-//       process.env.EXPRESS_PUBLIC_MOBILE_URL!,
-//     ]
-//   }
-// })
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.NOW_REGION ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME
+);
 
-// io.use()
-createRealtime()
+if (!isServerless) {
+  const server = createServer(app);
+  // const wss = new WebSocketServer({ server })
+  // const io = new Server(server, {
+  //   cors: {
+  //     origin: [
+  //       process.env.EXPRESS_PUBLIC_CLIENT_URL!,
+  //       process.env.EXPRESS_PUBLIC_MOBILE_URL!,
+  //     ]
+  //   }
+  // })
 
-// Tracking now uses Supabase Realtime; Socket.IO tracking is disabled.
-// initializeTracking(io)
+  // io.use()
+  createRealtime()
 
-// ================================
-// 🚀 START SERVER WITH SOCKET.IO & GRAPHQL
-// ================================
+  // Tracking now uses Supabase Realtime; Socket.IO tracking is disabled.
+  // initializeTracking(io)
 
-const port = process.env.EXPRESS_PORT || 8080;
+  // ================================
+  // 🚀 START SERVER WITH SOCKET.IO & GRAPHQL
+  // ================================
 
-async function start() {
-  try {
-    // Test database connection (lazy connection)
-    // await prisma.$connect(); // Comment out để tăng tốc, Prisma sẽ tự connect khi cần
+  const port = process.env.EXPRESS_PORT || 8080;
 
-    // Start HTTP server with Socket.IO
-    server.listen(port, () => {
-      const startTime = timer;
-      const readyTime = Date.now() - startTime;
-      const formattedTime = readyTime < 1000 ? `${readyTime}ms` : `${(readyTime / 1000).toFixed(2)}s`;
-      // console.log(`${pc.blue(`→`)} Environment: ${process.env.EXPRESS_ENV || 'development'}`);
-      console.log(Logging(`Ready in ${formattedTime}`, 'success', 'green')) // Compiled in
+  async function start() {
+    try {
+      // Test database connection (lazy connection)
+      // await prisma.$connect(); // Comment out để tăng tốc, Prisma sẽ tự connect khi cần
+
+      // Start HTTP server with Socket.IO
+      server.listen(port, () => {
+        const startTime = timer;
+        const readyTime = Date.now() - startTime;
+        const formattedTime = readyTime < 1000 ? `${readyTime}ms` : `${(readyTime / 1000).toFixed(2)}s`;
+        // console.log(`${pc.blue(`→`)} Environment: ${process.env.EXPRESS_ENV || 'development'}`);
+        console.log(Logging(`Ready in ${formattedTime}`, 'success', 'green')) // Compiled in
+      });
+
+    } catch (error) {
+      console.log(Logging(`Failed to start server: ${error}`, 'error', 'red'));
+      process.exit(1);
+    }
+  };
+
+  async function shutdown() {
+    console.log("\b")
+    // console.log(`\n ${pc.yellow(`◆`)} received, shutting down gracefully...`);
+    // console.log('\nSIGTERM or SIGINT signal received: closing HTTP server');
+    try {
+      // wss.on("close", () => {})
+      // io.on("close", () => {})
+      // await prisma.$disconnect();
+      // console.log('Database disconnection skipped for demo');
+    } catch (error) {
+      console.log(Logging(`Error connecting database`, 'warning', 'yellow'))
+      // console.error('Error disconnecting database:', error);
+    }
+    // Remove nodemon started flag file
+    // const startedFile = path.resolve(__dirname, '..', '.express', '.started');
+    // if (fs.existsSync(startedFile)) {
+    //   fs.unlinkSync(startedFile);
+    // }
+    // process.exit(0);
+
+    server.close(() => {
+      process.exit(0);
+      // console.log(`${pc.green(`✓`)} HTTP server closed`);
     });
 
-  } catch (error) {
-    console.log(Logging(`Failed to start server: ${error}`, 'error', 'red'));
-    process.exit(1);
-  }
-};
+    // // Give ongoing requests time to complete
+    // setTimeout(() => {
+    //   // console.log(`${pc.yellow(`⚠`)} Forcing shutdown...`);
+    //   process.exit(1);
+    // }, 5000); // 10 seconds timeout
+  };
 
-async function shutdown() {
-  console.log("\b")
-  // console.log(`\n ${pc.yellow(`◆`)} received, shutting down gracefully...`);
-  // console.log('\nSIGTERM or SIGINT signal received: closing HTTP server');
-  try {
-    // wss.on("close", () => {})
-    // io.on("close", () => {})
-    // await prisma.$disconnect();
-    // console.log('Database disconnection skipped for demo');
-  } catch (error) {
-    console.log(Logging(`Error connecting database`, 'warning', 'yellow'))
-    // console.error('Error disconnecting database:', error);
-  }
-  // Remove nodemon started flag file
-  // const startedFile = path.resolve(__dirname, '..', '.express', '.started');
-  // if (fs.existsSync(startedFile)) {
-  //   fs.unlinkSync(startedFile);
-  // }
-  // process.exit(0);
+  // Graceful shutdown handlers
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
-  server.close(() => {
-    process.exit(0);
-    // console.log(`${pc.green(`✓`)} HTTP server closed`);
-  });
+  // Handle uncaught errors
+  // process.on('uncaughtException', (error) => {
+  //   console.error(`${pc.red(`⨯`)} Uncaught Exception:`, error);
+  //   shutdown('uncaughtException');
+  // });
 
-  // // Give ongoing requests time to complete
-  // setTimeout(() => {
-  //   // console.log(`${pc.yellow(`⚠`)} Forcing shutdown...`);
-  //   process.exit(1);
-  // }, 5000); // 10 seconds timeout
-};
+  // process.on('unhandledRejection', (reason, promise) => {
+  //   console.error(`${pc.red(`⨯`)} Unhandled Rejection at:`, promise, 'reason:', reason);
+  // });
 
-// Graceful shutdown handlers
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-// Handle uncaught errors
-// process.on('uncaughtException', (error) => {
-//   console.error(`${pc.red(`⨯`)} Uncaught Exception:`, error);
-//   shutdown('uncaughtException');
-// });
-
-// process.on('unhandledRejection', (reason, promise) => {
-//   console.error(`${pc.red(`⨯`)} Unhandled Rejection at:`, promise, 'reason:', reason);
-// });
-
-// Start the server
-app.listen(start);
-
-// const PORT = process.env.EXPRESS_PORT || 8080;
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+  // Start the server
+  start();
+}
 
 export default app;

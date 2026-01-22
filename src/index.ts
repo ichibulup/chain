@@ -1,4 +1,4 @@
 import 'express';
-import app from '@/app/render';
+import app from '@/app/index';
 
 export default app;
