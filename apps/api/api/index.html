@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./globals.css" />
+    <meta name="next-size-adjust" content="" />
+    <title>Learning Management API</title>
+    <meta name="description" content="Professional Learning Management System API" />
+    <link rel="icon" href="/favicon.ico" sizes="256x256" type="image/x-icon" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo">Gorthenburg API</div>
+        <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <div class="hero">
+        <div class="status">✓ API Status: Operational</div>
+        <h1>Learning Management System API</h1>
+        <p>A comprehensive API for managing educational platforms, courses, users, and learning analytics. Built with Node.js and Express.</p>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="cta-buttons">
+        <a href="/docs" class="btn btn-primary">📚 API Documentation</a>
+        <a href="/health" class="btn btn-secondary">Health Check</a>
+      </div>
+
+      <!-- Features Grid -->
+      <div class="sections">
+        <div class="card">
+          <span class="card-icon">👥</span>
+          <h3>User Management</h3>
+          <p>Complete user authentication, authorization, and profile management system.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">📚</span>
+          <h3>Course Management</h3>
+          <p>Create, manage, and organize courses with curriculum and materials.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">📊</span>
+          <h3>Analytics</h3>
+          <p>Track progress, performance metrics, and learning outcomes in real-time.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🛒</span>
+          <h3>Order & Payments</h3>
+          <p>Manage orders, payments, and financial transactions securely.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🎯</span>
+          <h3>Marketplace</h3>
+          <p>Vendor and course marketplace management with promotions.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🔔</span>
+          <h3>Notifications</h3>
+          <p>Real-time notifications and messaging system for users.</p>
+        </div>
+      </div>
+
+      <!-- API Endpoints -->
+      <div class="endpoints">
+        <h2>Available Endpoints</h2>
+        <div class="endpoint-list">
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/api/users</span>
+            <span class="endpoint-desc">Get all users</span>
+          </div>
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/api/users</span>
+            <span class="endpoint-desc">Create new user</span>
+          </div>
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/api/courses</span>
+            <span class="endpoint-desc">Get all courses</span>
+          </div>
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/api/orders</span>
+            <span class="endpoint-desc">Create order</span>
+          </div>
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/api/analytics</span>
+            <span class="endpoint-desc">Get analytics data</span>
+          </div>
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/api/auth/login</span>
+            <span class="endpoint-desc">User authentication</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Learning Management System. All rights reserved.</p>
+      <p class="copyright">Built with Express.js | Powered by Node.js</p>
+    </footer>
+
+    <script>
+      function toggleTheme() {
+        const html = document.documentElement;
+        const button = document.querySelector('.theme-toggle');
+        
+        if (html.style.colorScheme === 'dark' || html.classList?.contains('dark')) {
+          html.style.colorScheme = 'light';
+          button.textContent = '🌙 Dark';
+          localStorage.setItem('theme', 'light');
+        } else {
+          html.style.colorScheme = 'dark';
+          button.textContent = '☀️ Light';
+          localStorage.setItem('theme', 'dark');
+        }
+      }
+
+      // Load saved theme preference
+      window.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const button = document.querySelector('.theme-toggle');
+        if (savedTheme === 'dark') {
+          document.documentElement.style.colorScheme = 'dark';
+          button.textContent = '☀️ Light';
+        } else {
+          document.documentElement.style.colorScheme = 'light';
+          button.textContent = '🌙 Dark';
+        }
+      });
+    </script>
+  </body>
+</html>
