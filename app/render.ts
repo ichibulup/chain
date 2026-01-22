@@ -162,12 +162,14 @@ app.use(cors({
 // ================================
 // app.use('/graphql', createGraphQLMiddleware());
 
-app.use(express.static(path.join(process.cwd(), "api")));
+const directory = path.join(process.cwd(), "api");
+app.use(express.static(directory));
+
 app.get("/favicon.ico", (
   req: Request,
   res: Response
 ) => {
-  res.sendFile(path.join(process.cwd(), "public", "favicon.ico"));
+  res.sendFile(path.join(directory, "favicon.ico"));
 });
 // app.get("/favicon.ico", express.static(path.join(__dirname, 'api', 'favicon.ico')));
 // ================================
@@ -214,6 +216,14 @@ app.use("/feedback", feedbackRoutes)
 app.use("/analytics", analyticsRoutes)
 
 app.get('/', (
+  req: Request,
+  res: Response
+) => {
+  // res.send('Professor Synapse API is running');
+  res.sendFile(path.join(directory, "index.html"));
+});
+
+app.get('/api', (
   req: Request,
   res: Response
 ) => {
