@@ -15,10 +15,7 @@
     },
     {
       "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [".express/**"]
-      }
+      "use": "@vercel/node"
     }
   ],
 
