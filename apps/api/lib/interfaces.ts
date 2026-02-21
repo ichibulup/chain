@@ -17,6 +17,19 @@ export const RestaurantShortly = {
 export const SupplierShortly = {
   id: true,
   name: true,
+  email: true,
+  phone: true,
+  address: true,
+  rating: true,
+  status: true,
+}
+
+export const WarehouseShortly = {
+  id: true,
+  name: true,
+  restaurantId: true,
+  address: true,
+  isActive: true,
 }
 
 export const UserShortly = {
@@ -54,8 +67,10 @@ export const MenuItemShortly = {
 export const InventoryItemShortly = {
   id: true,
   name: true,
-  slug: true,
-  imageUrl: true,
+  sku: true,
+  unit: true,
+  unitCost: true,
+  barcode: true,
   description: true,
 }
 
@@ -1385,7 +1400,6 @@ export interface InventoryBalance {
 export interface Supplier {
   id: string;
   organizationId: string;
-  restaurantId: string;
   name: string;
   contactPerson?: string | null;
   email?: string | null;

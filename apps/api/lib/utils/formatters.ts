@@ -187,14 +187,17 @@ export function buildAppMetadataFromDB(params: {
   user: any;
   organization?: { id: string; name: string; logoUrl?: string | null } | null;
   restaurant?: { id: string; name: string; logoUrl?: string | null } | null;
+  supplier?: { id: string; name: string } | null;
 }) {
-  const { user, organization, restaurant } = params;
+  const { user, organization, restaurant, supplier } = params;
 
   return {
     sub: user?.id ?? null,
     role: user?.role ?? null,
     organization_id: organization?.id ?? null,
     restaurant_id: restaurant?.id ?? null,
+    supplier_id: supplier?.id ?? null,
+    // supplier: supplier ? { id: supplier.id, name: supplier.name } : null,
   };
 }
 
@@ -230,5 +233,38 @@ export async function getUserOrgRestaurant(userId: string) {
     userRelations?.restaurantStaffRoles?.[0]?.restaurant ??
     null;
 
-  return { organization, restaurant };
+  let supplier = null as { id: string; name: string } | null;
+
+  if (organization?.id) {
+    supplier =
+      (await prisma.supplier.findFirst({
+        where: {
+          organizationId: organization.id,
+          deletedAt: null,
+          status: "active",
+          createdById: userId,
+        },
+        select: { id: true, name: true },
+        orderBy: { createdAt: "asc" },
+      })) ??
+      (await prisma.supplier.findFirst({
+        where: {
+          organizationId: organization.id,
+          deletedAt: null,
+          status: "active",
+        },
+        select: { id: true, name: true },
+        orderBy: { createdAt: "asc" },
+      })) ??
+      (await prisma.supplier.findFirst({
+        where: {
+          organizationId: organization.id,
+          deletedAt: null,
+        },
+        select: { id: true, name: true },
+        orderBy: { createdAt: "asc" },
+      }));
+  }
+
+  return { organization, restaurant, supplier };
 }

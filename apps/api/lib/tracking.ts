@@ -2,7 +2,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import pc from 'picocolors';
 import { Logging } from '@/lib/logging';
 import { createDeliveryLocation, resolveDeliveryId } from '@/services/delivery';
-import { DeliveryLocation, UserRole } from 'lib/interfaces';
+import { DeliveryLocation, UserRole } from '@/lib/interfaces';
 
 /* TRACKING */
 
