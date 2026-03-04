@@ -106,7 +106,6 @@ import {
   checkSupplierExists,
   checkInventoryItemExists,
 } from '@/services/helper'
-import { getUserIdFromRequest } from '@/lib/utils/auth';
 
 // =========================
 // WAREHOUSE CONTROLLERS
@@ -1773,8 +1772,10 @@ export const createWarehouseIssue = async (req: Request, res: Response) => {
       });
     }
 
-    const authUserId = getUserIdFromRequest(req);
-    const createdById = validatedData.createdById || authUserId;
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
+    const createdById = validatedData.createdById || userId;
 
     if (!createdById) {
       return res.status(401).json({

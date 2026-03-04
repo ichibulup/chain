@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validate } from '@/schemas/helper';
-import { getUserIdFromRequest } from '@/lib/utils/auth';
 import {
   // Order services
   createOrder as createOrderService,
@@ -151,7 +150,9 @@ export const createOrder = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const order = await createOrderService(validatedData, userId);
 
     res.status(201).json({
@@ -294,7 +295,9 @@ export const updateOrder = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const order = await updateOrderService(id, validatedData, userId);
 
     res.status(200).json({
@@ -343,7 +346,9 @@ export const deleteOrder = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteOrderService(id, userId);
 
     res.status(200).json({
@@ -401,7 +406,9 @@ export const createOrderItem = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const orderItem = await createOrderItemService(validatedData, userId);
 
     res.status(201).json({
@@ -540,7 +547,9 @@ export const updateOrderItem = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const orderItem = await updateOrderItemService(id, validatedData, userId);
 
     res.status(200).json({
@@ -589,7 +598,9 @@ export const deleteOrderItem = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteOrderItemService(id, userId);
 
     res.status(200).json({
@@ -887,7 +898,9 @@ export const createPayment = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const payment = await createPaymentService(validatedData, userId);
 
     res.status(201).json({
@@ -1026,7 +1039,9 @@ export const updatePayment = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const payment = await updatePaymentService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1075,7 +1090,9 @@ export const deletePayment = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deletePaymentService(id, userId);
 
     res.status(200).json({
@@ -1123,7 +1140,9 @@ export const createRefund = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const refund = await createRefundService(validatedData, userId);
 
     res.status(201).json({
@@ -1252,7 +1271,9 @@ export const updateRefund = async (req: Request, res: Response) => {
 
     const validatedData = result.data;
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const refund = await updateRefundService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1291,7 +1312,9 @@ export const deleteRefund = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteRefundService(id, userId);
 
     res.status(200).json({
@@ -1339,7 +1362,9 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const paymentIntent = await createPaymentIntentService(validatedData, userId);
 
     res.status(201).json({
@@ -1478,7 +1503,9 @@ export const updatePaymentIntent = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const paymentIntent = await updatePaymentIntentService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1527,7 +1554,9 @@ export const deletePaymentIntent = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deletePaymentIntentService(id, userId);
 
     res.status(200).json({

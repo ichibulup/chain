@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validate } from '@/schemas/helper';
-import { getUserIdFromRequest } from '@/lib/utils/auth';
 import {
   // Menu services
   getAllMenus as getAllMenusService,
@@ -142,7 +141,9 @@ export const createMenu = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const menu = await createMenuService(validatedData, userId);
 
     res.status(201).json({
@@ -285,7 +286,9 @@ export const updateMenu = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const menu = await updateMenuService(id, validatedData, userId);
 
     res.status(200).json({
@@ -334,7 +337,9 @@ export const deleteMenu = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteMenuService(id, userId);
 
     res.status(200).json({
@@ -571,7 +576,9 @@ export const updateMenuItem = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const menuItem = await updateMenuItemService(id, validatedData, userId);
 
     res.status(200).json({
@@ -620,7 +627,9 @@ export const deleteMenuItem = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const menuItem = await deleteMenuItemService(id, userId);
 
     res.status(200).json({
@@ -716,7 +725,9 @@ export const createRecipe = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const recipe = await createRecipeService(validatedData, userId);
 
     res.status(201).json({
@@ -867,7 +878,9 @@ export const updateRecipe = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const recipe = await updateRecipeService(id, validatedData, userId);
 
     res.status(200).json({
@@ -916,7 +929,9 @@ export const deleteRecipe = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteRecipeService(id, userId);
 
     res.status(200).json({
@@ -1122,7 +1137,9 @@ export const createOptionGroup = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const optionGroup = await createOptionGroupService(validatedData, userId);
 
     res.status(201).json({
@@ -1229,7 +1246,9 @@ export const updateOptionGroup = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const optionGroup = await updateOptionGroupService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1278,7 +1297,9 @@ export const deleteOptionGroup = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteOptionGroupService(id, userId);
 
     res.status(200).json({
@@ -1326,7 +1347,9 @@ export const createOption = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const option = await createOptionService(validatedData, userId);
 
     res.status(201).json({
@@ -1388,7 +1411,9 @@ export const updateOption = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const option = await updateOptionService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1437,7 +1462,9 @@ export const deleteOption = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteOptionService(id, userId);
 
     res.status(200).json({

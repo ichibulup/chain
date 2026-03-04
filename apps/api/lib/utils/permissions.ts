@@ -18,6 +18,8 @@ export const getActorOrThrow = async (userId: string): Promise<Actor> => {
     select: { id: true, role: true },
   });
 
+  console.log(user);
+
   if (!user) {
     throw new Error("User not found");
   }

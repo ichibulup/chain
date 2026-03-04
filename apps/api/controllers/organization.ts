@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { requireUserIdFromRequest } from '@/lib/utils/auth';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/lib/interfaces';
 import {
@@ -50,8 +49,9 @@ export const createOrganization = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
-    const actor = await getActorOrThrow(userId);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    const actor = await getActorOrThrow(userId)
 
     if (!isAdminRole(actor.role) && actor.role !== UserRole.supplier) {
       return res.status(403).json({
@@ -190,7 +190,10 @@ export const updateOrganization = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, id);
     } catch (error) {
@@ -248,7 +251,10 @@ export const deleteOrganization = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, id);
     } catch (error) {
@@ -299,7 +305,10 @@ export const transferOwnership = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -386,7 +395,10 @@ export const createOrganizationMembership = async (req: Request, res: Response) 
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -521,7 +533,10 @@ export const updateOrganizationMembership = async (req: Request, res: Response) 
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const membershipRecord = await prisma.organizationMembership.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -584,7 +599,10 @@ export const deleteOrganizationMembership = async (req: Request, res: Response) 
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const membershipRecord = await prisma.organizationMembership.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -647,7 +665,10 @@ export const bulkAddMembers = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -699,7 +720,10 @@ export const bulkUpdateMemberRoles = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -755,7 +779,10 @@ export const createRestaurant = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -890,7 +917,10 @@ export const updateRestaurant = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const restaurantRecord = await prisma.restaurant.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -960,7 +990,10 @@ export const deleteRestaurant = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const restaurantRecord = await prisma.restaurant.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -1058,7 +1091,10 @@ export const createRestaurantChain = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireOrganizationAdminOrSupplierLeader(userId, validation.data.organizationId);
     } catch (error) {
@@ -1193,7 +1229,10 @@ export const updateRestaurantChain = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const chainRecord = await prisma.restaurantChain.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -1256,7 +1295,10 @@ export const deleteRestaurantChain = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const chainRecord = await prisma.restaurantChain.findUnique({
       where: { id },
       select: { organizationId: true },
@@ -1323,7 +1365,10 @@ export const createRestaurantUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const restaurantRecord = await prisma.restaurant.findUnique({
       where: { id: validation.data.restaurantId },
       select: { organizationId: true },
@@ -1386,7 +1431,10 @@ export const getRestaurantUserRoleById = async (req: Request, res: Response) => 
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const role = await organizationService.getRestaurantUserRoleById(id);
 
     try {
@@ -1441,7 +1489,8 @@ export const getRestaurantUserRoles = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
     const actor = await getActorOrThrow(userId);
 
     if (validation.data.restaurantId) {
@@ -1503,7 +1552,10 @@ export const updateRestaurantUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const roleRecord = await prisma.restaurantUserRole.findUnique({
       where: { id },
       select: { restaurantId: true },
@@ -1578,7 +1630,10 @@ export const deleteRestaurantUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const roleRecord = await prisma.restaurantUserRole.findUnique({
       where: { id },
       select: { restaurantId: true },
@@ -1653,7 +1708,10 @@ export const bulkAddStaff = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     const restaurantRecord = await prisma.restaurant.findUnique({
       where: { id: validation.data.restaurantId },
       select: { organizationId: true },
@@ -1717,7 +1775,10 @@ export const transferRestaurantStaff = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireManagerOrAdminForRestaurant(userId, validation.data.fromRestaurantId);
     } catch (error) {
@@ -1768,7 +1829,10 @@ export const getRestaurantStaffStatistics = async (req: Request, res: Response) 
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
+
     try {
       await requireManagerOrAdminForRestaurant(userId, restaurantId);
     } catch (error) {

@@ -155,6 +155,7 @@ app.use(session({
 // app.use(cors());
 app.use(cors({
   origin: [
+    // "http://localhost:3000",
     process.env.EXPRESS_PUBLIC_CLIENT_URL!,
     process.env.EXPRESS_PUBLIC_MOBILE_URL!,
     process.env.EXPRESS_PUBLIC_LOCAL_URL!,

@@ -21,6 +21,16 @@ export const checkUserExists = async (id: string): Promise<boolean> => {
       where: { supabaseUserId: id, },
       select: { supabaseUserId: true }
     });
+    // const [user, supabaseUser] = await Promise.all([
+    //   User.findUnique({
+    //     where: { id },
+    //     select: { id: true },
+    //   }),
+    //   User.findFirst({
+    //     where: { supabaseUserId: id },
+    //     select: { supabaseUserId: true },
+    //   }),
+    // ])
 
     return !!user || !!supabaseUser;
   } catch (error) {

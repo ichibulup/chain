@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validate } from '@/schemas/helper';
-import { getUserIdFromRequest } from '@/lib/utils/auth';
 import {
   createCategory as createCategoryService,
   getCategoryById as getCategoryByIdService,
@@ -89,7 +88,9 @@ export const createCategory = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const category = await createCategoryService(validatedData, userId);
 
     res.status(201).json({
@@ -328,7 +329,9 @@ export const updateCategory = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const category = await updateCategoryService(id, validatedData, userId);
 
     res.status(200).json({
@@ -455,7 +458,9 @@ export const deleteCategory = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteCategoryService(id, userId);
 
     res.status(200).json({

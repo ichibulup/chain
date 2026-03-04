@@ -284,6 +284,80 @@ const applyIssueItemsToInventory = async (
     });
   }
 };
+
+const applyTransferItemsToInventory = async (
+  db: DbClient,
+  transfer: {
+    id: string;
+    restaurantId: string;
+    fromWarehouseId: string;
+    toWarehouseId: string;
+    transferDate: Date;
+    transferNumber: string;
+    notes?: string | null;
+  },
+  items: Array<{
+    inventoryItemId: string;
+    quantity: number;
+    unitCost?: number;
+  }>,
+  userId?: string | null,
+) => {
+  for (const item of items) {
+    const unitCost = Number(item.unitCost ?? 0);
+    const totalCost = Number(item.quantity) * unitCost;
+
+    await upsertInventoryBalance(db, {
+      restaurantId: transfer.restaurantId,
+      warehouseId: transfer.fromWarehouseId,
+      inventoryItemId: item.inventoryItemId,
+      balanceDate: transfer.transferDate,
+      receivedQty: 0,
+      issuedQty: item.quantity,
+      adjustedQty: 0,
+      userId,
+    });
+
+    await upsertInventoryBalance(db, {
+      restaurantId: transfer.restaurantId,
+      warehouseId: transfer.toWarehouseId,
+      inventoryItemId: item.inventoryItemId,
+      balanceDate: transfer.transferDate,
+      receivedQty: item.quantity,
+      issuedQty: 0,
+      adjustedQty: 0,
+      userId,
+    });
+
+    await db.inventoryTransaction.create({
+      data: {
+        restaurantId: transfer.restaurantId,
+        inventoryItemId: item.inventoryItemId,
+        type: 'transfer',
+        quantity: item.quantity,
+        totalCost,
+        unitCost,
+        invoiceNumber: transfer.transferNumber,
+        notes: `Transfer OUT ${transfer.fromWarehouseId} -> ${transfer.toWarehouseId}${transfer.notes ? ` | ${transfer.notes}` : ''}`,
+        createdById: userId || null,
+      },
+    });
+
+    await db.inventoryTransaction.create({
+      data: {
+        restaurantId: transfer.restaurantId,
+        inventoryItemId: item.inventoryItemId,
+        type: 'transfer',
+        quantity: item.quantity,
+        totalCost,
+        unitCost,
+        invoiceNumber: transfer.transferNumber,
+        notes: `Transfer IN ${transfer.fromWarehouseId} -> ${transfer.toWarehouseId}${transfer.notes ? ` | ${transfer.notes}` : ''}`,
+        createdById: userId || null,
+      },
+    });
+  }
+};
 // =========================
 // WAREHOUSE SERVICES
 // =========================
@@ -1591,26 +1665,75 @@ export const getWarehouseTransfers = async (query: WarehouseTransferQuery) => {
  */
 export const updateWarehouseTransfer = async (id: string, data: UpdateWarehouseTransfer) => {
   try {
-    const warehouseTransfer = await WarehouseTransfer.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
-      include: {
-        restaurant: {
-          select: RestaurantShortly
-        },
-        from: true,
-        to: true,
-        items: {
-          include: {
-            inventoryItem: {
-              select: InventoryItemShortly
+    const warehouseTransfer = await Database.$transaction(async (tx) => {
+      const existingTransfer = await tx.warehouseTransfer.findUnique({
+        where: { id },
+        include: {
+          items: {
+            include: {
+              inventoryItem: {
+                select: {
+                  id: true,
+                  unitCost: true,
+                },
+              },
             },
           },
         },
-      },
+      });
+
+      if (!existingTransfer) {
+        throw new Error('Warehouse transfer not found');
+      }
+
+      const updatedTransfer = await tx.warehouseTransfer.update({
+        where: { id },
+        data: {
+          ...data,
+          updatedAt: new Date(),
+        },
+        include: {
+          restaurant: {
+            select: RestaurantShortly
+          },
+          from: true,
+          to: true,
+          items: {
+            include: {
+              inventoryItem: {
+                select: InventoryItemShortly
+              },
+            },
+          },
+        },
+      });
+
+      if (existingTransfer.status !== 'completed' && updatedTransfer.status === 'completed') {
+        if (existingTransfer.items.length === 0) {
+          throw new Error('Cannot complete warehouse transfer without transfer items');
+        }
+
+        await applyTransferItemsToInventory(
+          tx,
+          {
+            id: existingTransfer.id,
+            restaurantId: existingTransfer.restaurantId,
+            fromWarehouseId: existingTransfer.fromWarehouseId,
+            toWarehouseId: existingTransfer.toWarehouseId,
+            transferDate: updatedTransfer.transferDate,
+            transferNumber: updatedTransfer.transferNumber,
+            notes: updatedTransfer.notes,
+          },
+          existingTransfer.items.map((item) => ({
+            inventoryItemId: item.inventoryItemId,
+            quantity: Number(item.quantity),
+            unitCost: Number(item.inventoryItem.unitCost ?? 0),
+          })),
+          existingTransfer.updatedById || existingTransfer.createdById,
+        );
+      }
+
+      return updatedTransfer;
     });
 
     return warehouseTransfer;
@@ -1654,6 +1777,10 @@ export const createWarehouseTransferItem = async (data: CreateWarehouseTransferI
       throw new Error('Warehouse transfer not found');
     }
 
+    if (transfer.status === 'completed') {
+      throw new Error('Cannot add item to completed warehouse transfer');
+    }
+
     // Check if inventory item exists
     const inventoryItem = await InventoryItem.findUnique({
       where: { id: data.inventoryItemId }
@@ -1690,6 +1817,25 @@ export const createWarehouseTransferItem = async (data: CreateWarehouseTransferI
  */
 export const updateWarehouseTransferItem = async (id: string, data: UpdateWarehouseTransferItem) => {
   try {
+    const existingItem = await WarehouseTransferItem.findUnique({
+      where: { id },
+      include: {
+        transfer: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!existingItem) {
+      throw new Error('Warehouse transfer item not found');
+    }
+
+    if (existingItem.transfer.status === 'completed') {
+      throw new Error('Cannot update item of completed warehouse transfer');
+    }
+
     const warehouseTransferItem = await WarehouseTransferItem.update({
       where: { id },
       data: {
@@ -1715,6 +1861,25 @@ export const updateWarehouseTransferItem = async (id: string, data: UpdateWareho
  */
 export const deleteWarehouseTransferItem = async (id: string) => {
   try {
+    const existingItem = await WarehouseTransferItem.findUnique({
+      where: { id },
+      include: {
+        transfer: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!existingItem) {
+      throw new Error('Warehouse transfer item not found');
+    }
+
+    if (existingItem.transfer.status === 'completed') {
+      throw new Error('Cannot delete item from completed warehouse transfer');
+    }
+
     await WarehouseTransferItem.delete({
       where: { id },
     });

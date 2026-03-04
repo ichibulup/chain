@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validate } from '@/schemas/helper';
-import { getUserIdFromRequest, requireUserIdFromRequest } from '@/lib/utils/auth';
 import {
   getActorOrThrow,
   isAdminRole,
@@ -260,7 +259,9 @@ export const updateTable = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const table = await updateTableService(id, validatedData, userId);
 
     res.status(200).json({
@@ -370,7 +371,9 @@ export const createReservation = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const reservation = await createReservationService(validatedData, userId);
 
     res.status(201).json({
@@ -527,7 +530,9 @@ export const updateReservation = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const reservation = await updateReservationService(id, validatedData, userId);
 
     res.status(200).json({
@@ -566,7 +571,9 @@ export const deleteReservation = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteReservationService(id, userId);
 
     res.status(200).json({
@@ -638,7 +645,9 @@ export const createTableOrder = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const tableOrder = await createTableOrderService(validatedData, userId);
 
     res.status(201).json({
@@ -779,7 +788,9 @@ export const updateTableOrder = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const tableOrder = await updateTableOrderService(id, validatedData, userId);
 
     res.status(200).json({
@@ -818,7 +829,9 @@ export const deleteTableOrder = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteTableOrderService(id, userId);
 
     res.status(200).json({
@@ -856,7 +869,9 @@ export const createStaffSchedule = async (req: Request, res: Response) => {
 
     const validatedData = result.data;
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
     try {
       await requireManagerOrAdminForRestaurant(userId, validatedData.restaurantId);
     } catch (error) {
@@ -926,7 +941,9 @@ export const getStaffScheduleById = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
     const staffSchedule = await getStaffScheduleByIdService(id);
 
     if (!staffSchedule) {
@@ -977,8 +994,9 @@ export const getStaffSchedules = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
-    const actor = await getActorOrThrow(userId);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    const actor = await getActorOrThrow(userId)
 
     if (result.data.restaurantId) {
       try {
@@ -1049,7 +1067,9 @@ export const updateStaffSchedule = async (req: Request, res: Response) => {
 
     const validatedData = result.data;
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
     const existingSchedule = await getStaffScheduleByIdService(id);
 
     if (!existingSchedule) {
@@ -1108,7 +1128,9 @@ export const deleteStaffSchedule = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
     const existingSchedule = await getStaffScheduleByIdService(id);
 
     if (!existingSchedule) {
@@ -1198,7 +1220,9 @@ export const createStaffAttendance = async (req: Request, res: Response) => {
       }
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const staffAttendance = await createStaffAttendanceService(validatedData, userId);
 
     res.status(201).json({
@@ -1337,7 +1361,9 @@ export const updateStaffAttendance = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const staffAttendance = await updateStaffAttendanceService(id, validatedData, userId);
 
     res.status(200).json({
@@ -1386,7 +1412,9 @@ export const deleteStaffAttendance = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     await deleteStaffAttendanceService(id, userId);
 
     res.status(200).json({
@@ -1504,8 +1532,9 @@ export const bulkUpdateStaffScheduleStatus = async (req: Request, res: Response)
 
     const validatedData = result.data;
 
-    const userId = requireUserIdFromRequest(req);
-    const actor = await getActorOrThrow(userId);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    const actor = await getActorOrThrow(userId)
 
     // Validate all schedules exist
     const scheduleExists = await Promise.all(
@@ -1616,7 +1645,9 @@ export const checkStaffScheduleConflict = async (req: Request, res: Response) =>
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId)
     try {
       await requireManagerAccessToStaff(userId, result.data.staffId);
     } catch (error) {

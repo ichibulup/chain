@@ -2,6 +2,7 @@
 import dotenv from "dotenv";
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client/index';
+import { Pool } from 'pg'
 
 dotenv.config({
 	path: ".env.local",
@@ -12,8 +13,8 @@ dotenv.config({
 // const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_DEMO_URL}`;
 const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_DIRECT_URL}`;
 // const connectionString = `${process.env.EXPRESS_PRIVATE_SUPABASE_URL}`
-
-const adapter = new PrismaPg({ connectionString })
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 export { prisma }

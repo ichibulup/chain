@@ -62,7 +62,7 @@ export function withAuth(options?: WithAuthOptions) {
 
       const session = sessionData?.session ?? null;
       const accessToken = headerToken ?? session?.access_token ?? undefined;
-      
+
       if (!accessToken) return res.status(401).json({ ok: false, error: "Unauthorized" });
 
       const { data, error } = await supabase.auth.getUser(accessToken);

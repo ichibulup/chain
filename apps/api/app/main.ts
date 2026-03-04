@@ -287,101 +287,31 @@ app.use((
 const server = createServer(app);
 const wss = new WebSocketServer({ server })
 
-const CHANNELS = [
-  "User",
-  "Organization",
-  "OrganizationMembership",
-  "RestaurantChain",
-  "Restaurant",
-  "RestaurantUserRole",
-  "Address",
-  "Conversation",
-  "Message",
-  "Category",
-  "Menu",
-  "MenuItem",
-  "Recipe",
-  "RecipeIngredient",
-  "OptionGroup",
-  "Option",
-  "MenuItemOptionGroup",
-  "Table",
-  "Reservation",
-  "TableOrder",
-  "Order",
-  "OrderItem",
-  "OrderItemOption",
-  "OrderStatusHistory",
-  "Payment",
-  "Refund",
-  "PaymentIntent",
-  "Review",
-  "Voucher",
-  "VoucherUsage",
-  "Promotion",
-  "PromotionMenuItem",
-  "TaxRate",
-  "OrderTax",
-  "DeliveryStaff",
-  "Delivery",
-  "DeliveryLocation",
-  "DeliveryZone",
-  "Warehouse",
-  "InventoryItem",
-  "InventoryTransaction",
-  "InventoryBalance",
-  "Supplier",
-  "SupplierItem",
-  "PurchaseOrder",
-  "PurchaseOrderItem",
-  "WarehouseReceipt",
-  "WarehouseReceiptItem",
-  "WarehouseIssue",
-  "WarehouseIssueItem",
-  "WarehouseTransfer",
-  "WarehouseTransferItem",
-  "StaffSchedule",
-  "StaffAttendance",
-  "RevenueReport",
-  "KpiMetric",
-  "AnalyticsEventLog",
-  "Notification",
-  "SystemConfig",
-  "AuditLog",
-  "UserStatistics",
-  "Asset",
-  "DeviceToken",
-  "RetailProduct",
-  "Cart",
-  "CartItem",
-  "CartItemOption",
-];
+const realtime = createClient();
+realtime
+  .channel("db-realtime")
+  .on("postgres_changes", { event: "*", schema: "public" }, (payload: any) => {
+    const table = payload?.table ?? "unknown";
+    console.log("🔁 DB Change:", table, payload);
 
-CHANNELS.forEach((table) => {
-  createClient()
-    .channel(`${table}-realtime`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table },
-      (payload) => {
-        console.log("🔁 DB Change:", table, payload);
-
-        // Broadcast cho tất cả client WebSocket
-        wss.clients.forEach((client: any) => {
-          if (client.readyState === 1) {
-            client.send(
-              JSON.stringify({
-                type: "supabase",
-                table,
-                data: payload,
-              })
-            );
-          }
-        });
+    // Broadcast cho tất cả client WebSocket
+    wss.clients.forEach((client: any) => {
+      if (client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: "supabase",
+            table,
+            data: payload,
+          })
+        );
       }
-    )
-    .subscribe();
-});
+    });
+  })
+  .subscribe((status) => {
+    if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+      console.error(`⨯ [Realtime] db channel status: ${status}`);
+    }
+  });
 
 wss.on("connection", (ws, req) => {
   console.log(`${pc.green(`✓`)} WebSocket client connected`);

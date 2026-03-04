@@ -29,10 +29,16 @@ import {
   SupplierRegistration,
 } from '@/schemas/supply';
 import {
+  InventoryTransactionType,
   InventoryItemShortly,
   OrganizationRole,
-  OrganizationShortly, RestaurantShortly, SupplierShortly,
+  OrganizationShortly,
+  PurchaseOrderStatus,
+  RestaurantShortly,
+  SupplierShortly,
   SupplierStatus,
+  WarehouseReceiptStatus,
+  WarehouseShortly,
   UserRole,
   UserShortly
 } from '@/lib/interfaces';
@@ -42,11 +48,16 @@ import {
   Supplier,
   SupplierItem,
 } from '@/models/supply';
-import { InventoryItem, WarehouseReceipt } from '@/models/inventory';
+import {
+  InventoryItem,
+  Warehouse,
+  WarehouseReceipt,
+} from '@/models/inventory';
 import { Restaurant, User } from '@/models/organization';
 import { Database } from '@/models/database';
 import { createOrganization as createOrganizationService } from '@/services/organization';
 import { updateUser as updateUserService } from '@/services/user';
+import { generateReceiptCode, normalizeBalanceDate } from '@/lib/utils/generaters';
 
 const computeItemPricing = (quantity: number, unitPrice?: number | null, totalPrice?: number | null) => {
   const safeQuantity = Number(quantity ?? 0);
@@ -55,6 +66,117 @@ const computeItemPricing = (quantity: number, unitPrice?: number | null, totalPr
     ? Number(totalPrice)
     : safeQuantity * safeUnitPrice;
   return { quantity: safeQuantity, unitPrice: safeUnitPrice, totalPrice: safeTotalPrice };
+};
+
+const appendWorkflowNote = (original: string | null | undefined, note: string) => {
+  const trimmed = (original || '').trim();
+  if (!trimmed) {
+    return note;
+  }
+
+  if (trimmed.includes(note)) {
+    return trimmed;
+  }
+
+  return `${trimmed}\n${note}`;
+};
+
+const generateUniqueReceiptNumberForTx = async (
+  tx: Prisma.TransactionClient,
+  maxAttempts = 5,
+) => {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const candidate = generateReceiptCode();
+    const existing = await tx.warehouseReceipt.findUnique({
+      where: { receiptNumber: candidate },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new Error('Failed to generate unique receipt number for purchase order receipt');
+};
+
+const upsertReceiptInventoryBalance = async (
+  tx: Prisma.TransactionClient,
+  {
+    restaurantId,
+    warehouseId,
+    inventoryItemId,
+    balanceDate,
+    receivedQty,
+    userId,
+  }: {
+    restaurantId: string;
+    warehouseId: string;
+    inventoryItemId: string;
+    balanceDate: Date;
+    receivedQty: number;
+    userId?: string | null;
+  },
+) => {
+  const normalizedDate = normalizeBalanceDate(balanceDate);
+
+  const previousBalance = await tx.inventoryBalance.findFirst({
+    where: {
+      restaurantId,
+      warehouseId,
+      inventoryItemId,
+      balanceDate: { lt: normalizedDate },
+      deletedAt: null,
+    },
+    orderBy: { balanceDate: 'desc' },
+  });
+
+  const openingBalance = previousBalance ? Number(previousBalance.closingBalance) : 0;
+  const existingBalance = await tx.inventoryBalance.findUnique({
+    where: {
+      restaurantId_warehouseId_inventoryItemId_balanceDate: {
+        restaurantId,
+        warehouseId,
+        inventoryItemId,
+        balanceDate: normalizedDate,
+      },
+    },
+  });
+
+  if (existingBalance) {
+    const nextReceivedQty = Number(existingBalance.receivedQty) + receivedQty;
+    const nextIssuedQty = Number(existingBalance.issuedQty);
+    const nextAdjustedQty = Number(existingBalance.adjustedQty);
+    const closingBalance = openingBalance + nextReceivedQty - nextIssuedQty + nextAdjustedQty;
+
+    await tx.inventoryBalance.update({
+      where: { id: existingBalance.id },
+      data: {
+        openingBalance,
+        receivedQty: nextReceivedQty,
+        closingBalance,
+        updatedById: userId || undefined,
+        updatedAt: new Date(),
+      },
+    });
+
+    return;
+  }
+
+  await tx.inventoryBalance.create({
+    data: {
+      restaurantId,
+      warehouseId,
+      inventoryItemId,
+      balanceDate: normalizedDate,
+      openingBalance,
+      receivedQty,
+      issuedQty: 0,
+      adjustedQty: 0,
+      closingBalance: openingBalance + receivedQty,
+      createdById: userId || null,
+    },
+  });
 };
 
 // =========================
@@ -711,6 +833,29 @@ export const createPurchaseOrder = async (data: CreatePurchaseOrder, userId?: st
       throw new Error('Restaurant not found');
     }
 
+    if (data.warehouseId) {
+      const warehouse = await Warehouse.findUnique({
+        where: { id: data.warehouseId },
+        select: {
+          id: true,
+          restaurantId: true,
+          isActive: true,
+        },
+      });
+
+      if (!warehouse) {
+        throw new Error('Warehouse not found');
+      }
+
+      if (!warehouse.isActive) {
+        throw new Error('Warehouse is inactive');
+      }
+
+      if (warehouse.restaurantId !== data.restaurantId) {
+        throw new Error('Warehouse does not belong to purchase order restaurant');
+      }
+    }
+
     const createdById = userId || data.createdById;
 
     if (!createdById) {
@@ -767,6 +912,10 @@ export const createPurchaseOrder = async (data: CreatePurchaseOrder, userId?: st
     const itemsTotal = normalizedItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
     const purchaseOrder = await Database.$transaction(async (tx) => {
+      const workflowNote = data.warehouseId
+        ? `Warehouse request origin: ${data.warehouseId}`
+        : '';
+
       const createdOrder = await tx.purchaseOrder.create({
         data: {
           supplierId: data.supplierId,
@@ -777,7 +926,7 @@ export const createPurchaseOrder = async (data: CreatePurchaseOrder, userId?: st
           expectedDate: data.expectedDate,
           receivedDate: data.receivedDate,
           totalAmount: normalizedItems.length ? itemsTotal : data.totalAmount,
-          notes: data.notes,
+          notes: appendWorkflowNote(data.notes, workflowNote),
           createdById: createdById,
           items: normalizedItems.length
             ? {
@@ -792,7 +941,9 @@ export const createPurchaseOrder = async (data: CreatePurchaseOrder, userId?: st
           restaurant: {
             select: RestaurantShortly
           },
-          createdBy: true,
+          createdBy: {
+            select: UserShortly
+          },
           items: {
             include: {
               inventoryItem: {
@@ -827,7 +978,9 @@ export const getPurchaseOrderById = async (id: string) => {
         restaurant: {
           select: RestaurantShortly
         },
-        createdBy: true,
+        createdBy: {
+          select: UserShortly
+        },
         items: {
           include: {
             inventoryItem: {
@@ -912,7 +1065,9 @@ export const getPurchaseOrders = async (query: PurchaseOrderQuery) => {
           restaurant: {
             select: RestaurantShortly
           },
-          createdBy: true,
+          createdBy: {
+            select: UserShortly
+          },
           items: {
             include: {
               inventoryItem: {
@@ -966,7 +1121,9 @@ export const updatePurchaseOrder = async (id: string, data: UpdatePurchaseOrder)
         restaurant: {
           select: RestaurantShortly
         },
-        createdBy: true,
+        createdBy: {
+          select: UserShortly
+        },
         items: {
           include: {
             inventoryItem: {
@@ -1665,26 +1822,57 @@ export const getPurchaseOrderAnalytics = async (query: PurchaseOrderAnalyticsQue
 export const sendPurchaseOrder = async (data: SendPurchaseOrder) => {
   try {
     const purchaseOrder = await PurchaseOrder.findUnique({
-      where: { id: data.purchaseOrderId }
+      where: { id: data.purchaseOrderId },
+      include: {
+        items: true,
+      },
     });
 
     if (!purchaseOrder) {
       throw new Error('Purchase order not found');
     }
 
-    if (purchaseOrder.status !== 'draft') {
+    if (purchaseOrder.status !== PurchaseOrderStatus.draft) {
       throw new Error('Only draft purchase orders can be sent');
     }
+
+    if (purchaseOrder.items.length === 0) {
+      throw new Error('Cannot send purchase order without items');
+    }
+
+    const warehouse = await Warehouse.findUnique({
+      where: { id: data.warehouseId },
+      select: WarehouseShortly,
+    });
+
+    if (!warehouse) {
+      throw new Error('Warehouse not found');
+    }
+
+    if (!warehouse.isActive) {
+      throw new Error('Warehouse is inactive');
+    }
+
+    if (warehouse.restaurantId !== purchaseOrder.restaurantId) {
+      throw new Error('Warehouse does not belong to purchase order restaurant');
+    }
+
+    const requestedBy = data.requestedById ? `requestedBy=${data.requestedById}` : 'requestedBy=system';
+    const workflowNote = `WarehouseRequest warehouseId=${data.warehouseId}; ${requestedBy}; sendMethod=${data.sendMethod}`;
 
     const updatedOrder = await PurchaseOrder.update({
       where: { id: data.purchaseOrderId },
       data: {
-        status: 'sent',
+        status: PurchaseOrderStatus.sent,
+        notes: appendWorkflowNote(purchaseOrder.notes, workflowNote),
         updatedAt: new Date(),
       },
       include: {
         supplier: {
           select: SupplierShortly
+        },
+        restaurant: {
+          select: RestaurantShortly
         },
         items: {
           include: {
@@ -1715,27 +1903,40 @@ export const sendPurchaseOrder = async (data: SendPurchaseOrder) => {
 export const confirmPurchaseOrder = async (data: ConfirmPurchaseOrder) => {
   try {
     const purchaseOrder = await PurchaseOrder.findUnique({
-      where: { id: data.purchaseOrderId }
+      where: { id: data.purchaseOrderId },
     });
 
     if (!purchaseOrder) {
       throw new Error('Purchase order not found');
     }
 
-    if (purchaseOrder.status !== 'sent') {
+    if (purchaseOrder.status !== PurchaseOrderStatus.sent) {
       throw new Error('Only sent purchase orders can be confirmed');
     }
+
+    if (purchaseOrder.supplierId !== data.supplierId) {
+      throw new Error('Supplier does not match this purchase order');
+    }
+
+    const workflowNote = appendWorkflowNote(
+      purchaseOrder.notes,
+      `SupplierConfirmation supplierId=${data.supplierId}; confirmedBy=${data.confirmedById || 'system'}${data.confirmationNotes ? `; note=${data.confirmationNotes}` : ''}`,
+    );
 
     const updatedOrder = await PurchaseOrder.update({
       where: { id: data.purchaseOrderId },
       data: {
-        status: 'confirmed',
+        status: PurchaseOrderStatus.confirmed,
         expectedDate: data.expectedDate,
+        notes: workflowNote,
         updatedAt: new Date(),
       },
       include: {
         supplier: {
           select: SupplierShortly
+        },
+        restaurant: {
+          select: RestaurantShortly
         },
         items: {
           include: {
@@ -1762,66 +1963,250 @@ export const confirmPurchaseOrder = async (data: ConfirmPurchaseOrder) => {
  */
 export const receivePurchaseOrder = async (data: ReceivePurchaseOrder) => {
   try {
-    const purchaseOrder = await PurchaseOrder.findUnique({
-      where: { id: data.purchaseOrderId },
-      include: {
-        items: true,
-      }
-    });
-
-    if (!purchaseOrder) {
-      throw new Error('Purchase order not found');
-    }
-
-    if (!['confirmed', 'partiallyReceived'].includes(purchaseOrder.status)) {
-      throw new Error('Only confirmed or partially received purchase orders can be received');
-    }
-
-    // Update received quantities for items
-    for (const receivedItem of data.receivedItems) {
-      await PurchaseOrderItem.update({
-        where: { id: receivedItem.itemId },
-        data: {
-          receivedQty: receivedItem.receivedQty,
+    const result = await Database.$transaction(async (tx) => {
+      const purchaseOrder = await tx.purchaseOrder.findUnique({
+        where: { id: data.purchaseOrderId },
+        include: {
+          supplier: {
+            select: SupplierShortly,
+          },
+          items: true,
         },
       });
-    }
 
-    // Check if all items are fully received
-    const allItems = await PurchaseOrderItem.findMany({
-      where: { purchaseOrderId: data.purchaseOrderId }
-    });
+      if (!purchaseOrder) {
+        throw new Error('Purchase order not found');
+      }
 
-    const fullyReceived = allItems.every(item => 
-      Number(item.receivedQty) >= Number(item.quantity)
-    );
+      if (
+        purchaseOrder.status !== PurchaseOrderStatus.confirmed
+        && purchaseOrder.status !== PurchaseOrderStatus.partiallyReceived
+      ) {
+        throw new Error('Only confirmed or partially received purchase orders can be received');
+      }
 
-    const newStatus = fullyReceived ? 'received' : 'partiallyReceived';
-
-    const updatedOrder = await PurchaseOrder.update({
-      where: { id: data.purchaseOrderId },
-      data: {
-        status: newStatus,
-        receivedDate: data.receivedDate,
-        updatedAt: new Date(),
-      },
-      include: {
-        supplier: {
-          select: SupplierShortly
+      const warehouse = await tx.warehouse.findUnique({
+        where: { id: data.warehouseId },
+        select: {
+          id: true,
+          restaurantId: true,
+          isActive: true,
         },
-        items: {
-          include: {
-            inventoryItem: {
-              select: InventoryItemShortly
+      });
+
+      if (!warehouse) {
+        throw new Error('Warehouse not found');
+      }
+
+      if (!warehouse.isActive) {
+        throw new Error('Warehouse is inactive');
+      }
+
+      if (warehouse.restaurantId !== purchaseOrder.restaurantId) {
+        throw new Error('Warehouse does not belong to purchase order restaurant');
+      }
+
+      const createdById = data.createdById || purchaseOrder.createdById;
+      const approvedById = data.approvedById || data.createdById || null;
+
+      const orderItemsMap = new Map(
+        purchaseOrder.items.map((item) => [item.id, item]),
+      );
+
+      const validReceivedItems = data.receivedItems.filter((item) => Number(item.receivedQty) > 0);
+      if (validReceivedItems.length === 0) {
+        throw new Error('At least one received item with quantity > 0 is required');
+      }
+
+      const receiptItemsInput: Array<{
+        inventoryItemId: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+        notes?: string;
+      }> = [];
+
+      for (const receivedItem of validReceivedItems) {
+        const orderItem = orderItemsMap.get(receivedItem.itemId);
+
+        if (!orderItem) {
+          throw new Error(`Purchase order item not found: ${receivedItem.itemId}`);
+        }
+
+        const orderedQty = Number(orderItem.quantity);
+        const previousReceivedQty = Number(orderItem.receivedQty);
+        const nextReceivedQty = previousReceivedQty + Number(receivedItem.receivedQty);
+
+        if (nextReceivedQty > orderedQty) {
+          throw new Error(`Received quantity exceeds ordered quantity for item: ${receivedItem.itemId}`);
+        }
+
+        await tx.purchaseOrderItem.update({
+          where: { id: orderItem.id },
+          data: {
+            receivedQty: nextReceivedQty,
+            notes: appendWorkflowNote(orderItem.notes, receivedItem.qualityNotes || ''),
+          },
+        });
+
+        const unitPrice = Number(orderItem.unitPrice);
+        const quantity = Number(receivedItem.receivedQty);
+        const totalPrice = quantity * unitPrice;
+
+        receiptItemsInput.push({
+          inventoryItemId: orderItem.inventoryItemId,
+          quantity,
+          unitPrice,
+          totalPrice,
+          notes: receivedItem.qualityNotes,
+        });
+      }
+
+      const providedReceiptNumber = data.receiptNumber?.trim();
+      if (providedReceiptNumber) {
+        const existingReceipt = await tx.warehouseReceipt.findUnique({
+          where: { receiptNumber: providedReceiptNumber },
+          select: { id: true },
+        });
+
+        if (existingReceipt) {
+          throw new Error('Receipt number already exists');
+        }
+      }
+
+      const receiptNumber = providedReceiptNumber || await generateUniqueReceiptNumberForTx(tx);
+      const receiptTotalAmount = receiptItemsInput.reduce((sum, item) => sum + item.totalPrice, 0);
+      const receiptNotes = appendWorkflowNote(
+        data.receivingNotes,
+        `Linked purchaseOrderId=${purchaseOrder.id}; supplierId=${purchaseOrder.supplierId}`,
+      );
+
+      const warehouseReceipt = await tx.warehouseReceipt.create({
+        data: {
+          restaurantId: purchaseOrder.restaurantId,
+          warehouseId: data.warehouseId,
+          receiptNumber,
+          supplierId: purchaseOrder.supplierId,
+          receiptDate: data.receivedDate,
+          status: WarehouseReceiptStatus.received,
+          totalAmount: receiptTotalAmount,
+          notes: receiptNotes,
+          createdById,
+          approvedById,
+          approvedAt: approvedById ? data.receivedDate : null,
+          items: {
+            create: receiptItemsInput,
+          },
+        },
+        include: {
+          restaurant: {
+            select: RestaurantShortly,
+          },
+          warehouse: {
+            select: WarehouseShortly,
+          },
+          supplier: {
+            select: SupplierShortly,
+          },
+          createdBy: {
+            select: UserShortly,
+          },
+          approvedBy: {
+            select: UserShortly,
+          },
+          items: {
+            include: {
+              inventoryItem: {
+                select: InventoryItemShortly,
+              },
             },
           },
         },
-      },
+      });
+
+      for (const item of receiptItemsInput) {
+        await upsertReceiptInventoryBalance(tx, {
+          restaurantId: purchaseOrder.restaurantId,
+          warehouseId: data.warehouseId,
+          inventoryItemId: item.inventoryItemId,
+          balanceDate: data.receivedDate,
+          receivedQty: item.quantity,
+          userId: approvedById || createdById,
+        });
+
+        await tx.inventoryTransaction.create({
+          data: {
+            restaurantId: purchaseOrder.restaurantId,
+            inventoryItemId: item.inventoryItemId,
+            type: InventoryTransactionType.purchase,
+            quantity: item.quantity,
+            totalCost: item.totalPrice,
+            unitCost: item.unitPrice,
+            invoiceNumber: warehouseReceipt.receiptNumber,
+            supplierName: purchaseOrder.supplier?.name || null,
+            notes: receiptNotes,
+            createdById: approvedById || createdById,
+          },
+        });
+      }
+
+      const updatedItems = await tx.purchaseOrderItem.findMany({
+        where: { purchaseOrderId: purchaseOrder.id },
+      });
+
+      const fullyReceived = updatedItems.every((item) =>
+        Number(item.receivedQty) >= Number(item.quantity)
+      );
+
+      const purchaseOrderStatus = fullyReceived
+        ? PurchaseOrderStatus.received
+        : PurchaseOrderStatus.partiallyReceived;
+
+      const updatedOrder = await tx.purchaseOrder.update({
+        where: { id: purchaseOrder.id },
+        data: {
+          status: purchaseOrderStatus,
+          receivedDate: fullyReceived ? data.receivedDate : purchaseOrder.receivedDate,
+          notes: appendWorkflowNote(
+            purchaseOrder.notes,
+            `WarehouseReceived warehouseId=${data.warehouseId}; receiptNumber=${warehouseReceipt.receiptNumber}`,
+          ),
+          updatedAt: new Date(),
+          updatedById: approvedById || createdById,
+        },
+        include: {
+          supplier: {
+            select: SupplierShortly,
+          },
+          restaurant: {
+            select: RestaurantShortly,
+          },
+          createdBy: {
+            select: UserShortly,
+          },
+          items: {
+            include: {
+              inventoryItem: {
+                select: InventoryItemShortly,
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        purchaseOrder: updatedOrder,
+        warehouseReceipt,
+        fullyReceived,
+      };
     });
 
     return {
-      message: `Purchase order ${fullyReceived ? 'fully received' : 'partially received'} successfully`,
-      data: updatedOrder,
+      message: `Purchase order ${result.fullyReceived ? 'fully received' : 'partially received'} successfully`,
+      data: {
+        purchaseOrder: result.purchaseOrder,
+        warehouseReceipt: result.warehouseReceipt,
+      },
     };
   } catch (error) {
     console.error('Error receiving purchase order:', error);
@@ -1842,20 +2227,26 @@ export const cancelPurchaseOrder = async (data: CancelPurchaseOrder) => {
       throw new Error('Purchase order not found');
     }
 
-    if (['received', 'cancelled'].includes(purchaseOrder.status)) {
+    if (
+      purchaseOrder.status === PurchaseOrderStatus.received
+      || purchaseOrder.status === PurchaseOrderStatus.cancelled
+    ) {
       throw new Error('Cannot cancel received or already cancelled purchase orders');
     }
 
     const updatedOrder = await PurchaseOrder.update({
       where: { id: data.purchaseOrderId },
       data: {
-        status: 'cancelled',
-        notes: data.reason,
+        status: PurchaseOrderStatus.cancelled,
+        notes: appendWorkflowNote(purchaseOrder.notes, `CancelReason: ${data.reason}`),
         updatedAt: new Date(),
       },
       include: {
         supplier: {
           select: SupplierShortly
+        },
+        restaurant: {
+          select: RestaurantShortly
         },
         items: {
           include: {

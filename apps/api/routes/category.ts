@@ -33,7 +33,7 @@ router.put('/reorder', reorderCategories);
 router.put('/:id/move', moveCategory);
 router.get('/:id/breadcrumbs', getCategoryBreadcrumbs);
 
-router.get('/', requireAuth(), getCategories);
+router.get('/', getCategories);
 
 router.post('/', createCategory);
 

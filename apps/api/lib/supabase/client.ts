@@ -23,6 +23,7 @@ export function createClient(): SupabaseClient {
         detectSessionInUrl: false,
       },
       realtime: {
+        // websocket: ws,
         params: {
           eventsPerSecond: 20
         },
@@ -31,6 +32,7 @@ export function createClient(): SupabaseClient {
         headers: {
           'User-Agent': 'Express-Server',
         },
+        fetch: (...args) => fetch(...args),
       },
     }
   )

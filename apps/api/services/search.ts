@@ -27,6 +27,9 @@ const buildEmptyResult = <T>(page: number, limit: number): PagedResult<T> => ({
   totalPages: 0,
 });
 
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 export const searchAll = async (query: SearchQuery) => {
   const {
     q,
@@ -172,7 +175,18 @@ export const searchAll = async (query: SearchQuery) => {
       }
 
       if (inventoryCategory) {
-        where.category = inventoryCategory;
+        if (isUuid(inventoryCategory)) {
+          where.categoryId = inventoryCategory;
+        } else {
+          where.category = {
+            is: {
+              name: {
+                equals: inventoryCategory,
+                mode: 'insensitive',
+              },
+            },
+          };
+        }
       }
 
       if (onlyActive) {
@@ -185,7 +199,16 @@ export const searchAll = async (query: SearchQuery) => {
           { description: { contains: q, mode: 'insensitive' } },
           { sku: { contains: q, mode: 'insensitive' } },
           { barcode: { contains: q, mode: 'insensitive' } },
-          { category: { contains: q, mode: 'insensitive' } },
+          {
+            category: {
+              is: {
+                name: {
+                  contains: q,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
         ];
       }
 

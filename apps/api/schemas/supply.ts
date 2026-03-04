@@ -1,11 +1,15 @@
 import { z } from 'zod';
+import {
+  PurchaseOrderStatus as PurchaseOrderStatusEnum,
+  SupplierStatus as SupplierStatusEnum,
+} from '@/lib/interfaces';
 
 // =========================
 // ENUMS
 // =========================
 
-export const SupplierStatus = z.enum(['active', 'inactive', 'suspended', 'blacklisted']);
-export const PurchaseOrderStatus = z.enum(['draft', 'sent', 'confirmed', 'partiallyReceived', 'received', 'cancelled']);
+export const SupplierStatus = z.nativeEnum(SupplierStatusEnum);
+export const PurchaseOrderStatus = z.nativeEnum(PurchaseOrderStatusEnum);
 export const PriceAdjustmentType = z.enum(['percentage', 'fixed']);
 export const PerformanceMetric = z.enum(['deliveryTime', 'quality', 'price', 'reliability']);
 export const GroupByOption = z.enum(['supplier', 'month', 'week', 'day']);
@@ -49,7 +53,7 @@ export const CreateSupplierSchema = z.object({
   taxCode: z.string().max(50, 'Tax code too long').optional(),
   paymentTerms: z.string().max(200, 'Payment terms too long').optional(),
   rating: z.number().min(0).max(5).optional(),
-  status: SupplierStatus.default('active'),
+  status: SupplierStatus.default(SupplierStatusEnum.active),
 });
 
 // Supplier registration schema (self-register with new organization)
@@ -185,8 +189,9 @@ const PurchaseOrderItemInputSchema = z.object({
 export const CreatePurchaseOrderSchema = z.object({
   supplierId: z.string().uuid(),
   restaurantId: z.string().uuid(),
+  warehouseId: z.string().uuid().optional(),
   orderNumber: z.string().min(1, 'Order number is required').max(50, 'Order number too long'),
-  status: PurchaseOrderStatus.default('draft'),
+  status: PurchaseOrderStatus.default(PurchaseOrderStatusEnum.draft),
   orderDate: z.coerce.date(),
   expectedDate: z.coerce.date().optional(),
   receivedDate: z.coerce.date().optional(),
@@ -369,6 +374,8 @@ export const SupplierPaymentTermsUpdateSchema = z.object({
 // Send purchase order schema
 export const SendPurchaseOrderSchema = z.object({
   purchaseOrderId: z.string().uuid(),
+  warehouseId: z.string().uuid(),
+  requestedById: z.string().uuid().optional(),
   sendMethod: SendMethod.default('email'),
   recipientEmail: z.string().email('Invalid email format').optional(),
   message: z.string().max(1000, 'Message too long').optional(),
@@ -377,19 +384,25 @@ export const SendPurchaseOrderSchema = z.object({
 // Confirm purchase order schema
 export const ConfirmPurchaseOrderSchema = z.object({
   purchaseOrderId: z.string().uuid(),
-  expectedDate: z.date(),
+  supplierId: z.string().uuid(),
+  confirmedById: z.string().uuid().optional(),
+  expectedDate: z.coerce.date(),
   confirmationNotes: z.string().max(1000, 'Confirmation notes too long').optional(),
 });
 
 // Receive purchase order schema
 export const ReceivePurchaseOrderSchema = z.object({
   purchaseOrderId: z.string().uuid(),
+  warehouseId: z.string().uuid(),
+  createdById: z.string().uuid().optional(),
+  approvedById: z.string().uuid().optional(),
+  receiptNumber: z.string().max(80, 'Receipt number too long').optional(),
   receivedDate: z.date(),
   receivedItems: z.array(z.object({
     itemId: z.string().uuid(),
     receivedQty: z.number().positive('Received quantity must be positive'),
     qualityNotes: z.string().max(500, 'Quality notes too long').optional(),
-  })),
+  })).min(1, 'At least one received item is required'),
   receivingNotes: z.string().max(1000, 'Receiving notes too long').optional(),
 });
 

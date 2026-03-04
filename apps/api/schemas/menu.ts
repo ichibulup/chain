@@ -119,8 +119,8 @@ export const UpdateMenuItemSchema = z.object({
 export const MenuItemQuerySchema = z.object({
   menuId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
-  isAvailable: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
+  isAvailable: z.coerce.boolean().optional(),
+  isFeatured: z.coerce.boolean().optional(),
   search: z.string().optional(),
   minPrice: z.number().positive().optional(),
   maxPrice: z.number().positive().optional(),

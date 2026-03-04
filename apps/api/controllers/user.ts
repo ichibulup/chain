@@ -33,7 +33,6 @@ import {
   UpdateUserActivitySchema,
   syncFromSupabaseSchema,
 } from '@/schemas/user';
-import { requireUserIdFromRequest } from '@/lib/utils/auth';
 import { getActorOrThrow, isAdminRole } from '@/lib/utils/permissions';
 
 // =========================
@@ -421,10 +420,8 @@ export async function getUserById(req: Request, res: Response) {
  */
 export async function getMe(req: Request, res: Response) {
   try {
-    const auth = (req as any).auth;
-    const dbUser = (req as any).dbUser;
-    const userId = dbUser?.id ?? auth?.userId;
-
+    const authUser = res.locals.user;
+    const userId = authUser?.id
     if (!userId || !validate(userId)) {
       return res.status(401).json({
         success: false,
@@ -586,8 +583,9 @@ export async function updateUser(req: Request, res: Response) {
       });
     }
 
-    const userId = requireUserIdFromRequest(req);
-    const actor = await getActorOrThrow(userId);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    const actor = await getActorOrThrow(userId)
 
     if (validation.data.role && !isAdminRole(actor.role)) {
       return res.status(403).json({

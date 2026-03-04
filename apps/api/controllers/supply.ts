@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validate } from '@/schemas/helper';
-import { getUserIdFromRequest } from '@/lib/utils/auth';
 import {
   CreateSupplierSchema,
   UpdateSupplierSchema,
@@ -69,6 +68,7 @@ import {
   checkUserExists,
   checkOrganizationExists,
   checkSupplierExists,
+  checkWarehouseExists,
   checkInventoryItemExists,
 } from '@/services/helper';
 
@@ -101,7 +101,9 @@ export const createSupplierController = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const supplier = await createSupplier(validatedData, userId);
 
     res.status(201).json({
@@ -125,7 +127,9 @@ export const registerSupplierController = async (req: Request, res: Response) =>
   try {
     const validatedData = SupplierRegistrationSchema.parse(req.body);
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const result = await registerSupplier(validatedData, userId);
 
     res.status(201).json({
@@ -243,7 +247,9 @@ export const updateSupplierController = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const supplier = await updateSupplier(id, validatedData, userId);
 
     res.status(200).json({
@@ -284,7 +290,9 @@ export const deleteSupplierController = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const result = await deleteSupplier(id, userId);
 
     res.status(200).json({
@@ -460,7 +468,9 @@ export const updateSupplierItemController = async (req: Request, res: Response) 
     // Validate request body
     const validatedData = UpdateSupplierItemSchema.parse(req.body);
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const supplierItem = await updateSupplierItem(id, validatedData, userId);
 
     res.status(200).json({
@@ -492,7 +502,9 @@ export const deleteSupplierItemController = async (req: Request, res: Response) 
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const result = await deleteSupplierItem(id, userId);
 
     res.status(200).json({
@@ -535,6 +547,13 @@ export const createPurchaseOrderController = async (req: Request, res: Response)
       });
     }
 
+    if (validatedData.warehouseId && !validate(validatedData.warehouseId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid warehouse ID format',
+      });
+    }
+
     // Check if supplier exists
     const supplierExists = await checkSupplierExists(validatedData.supplierId);
     if (!supplierExists) {
@@ -553,7 +572,19 @@ export const createPurchaseOrderController = async (req: Request, res: Response)
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    if (validatedData.warehouseId) {
+      const warehouseExists = await checkWarehouseExists(validatedData.warehouseId);
+      if (!warehouseExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Warehouse not found',
+        });
+      }
+    }
+
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const createdById = validatedData.createdById || userId;
 
     if (!createdById) {
@@ -738,7 +769,9 @@ export const deletePurchaseOrderController = async (req: Request, res: Response)
       });
     }
 
-    const userId = getUserIdFromRequest(req);
+    const authUser = res.locals.user;
+    const userId = authUser?.id
+    // const actor = await getActorOrThrow(userId);
     const result = await deletePurchaseOrder(id, userId);
 
     res.status(200).json({
@@ -1223,6 +1256,38 @@ export const sendPurchaseOrderController = async (req: Request, res: Response) =
       });
     }
 
+    if (!validate(validatedData.warehouseId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid warehouse ID format',
+      });
+    }
+
+    const warehouseExists = await checkWarehouseExists(validatedData.warehouseId);
+    if (!warehouseExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Warehouse not found',
+      });
+    }
+
+    if (validatedData.requestedById) {
+      if (!validate(validatedData.requestedById)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid requester user ID format',
+        });
+      }
+
+      const requesterExists = await checkUserExists(validatedData.requestedById);
+      if (!requesterExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Requester user not found',
+        });
+      }
+    }
+
     const result = await sendPurchaseOrder(validatedData);
 
     res.status(200).json({
@@ -1255,6 +1320,38 @@ export const confirmPurchaseOrderController = async (req: Request, res: Response
       });
     }
 
+    if (!validate(validatedData.supplierId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid supplier ID format',
+      });
+    }
+
+    const supplierExists = await checkSupplierExists(validatedData.supplierId);
+    if (!supplierExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Supplier not found',
+      });
+    }
+
+    if (validatedData.confirmedById) {
+      if (!validate(validatedData.confirmedById)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid confirmer user ID format',
+        });
+      }
+
+      const confirmerExists = await checkUserExists(validatedData.confirmedById);
+      if (!confirmerExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Confirmer user not found',
+        });
+      }
+    }
+
     const result = await confirmPurchaseOrder(validatedData);
 
     res.status(200).json({
@@ -1285,6 +1382,55 @@ export const receivePurchaseOrderController = async (req: Request, res: Response
         success: false,
         message: 'Invalid purchase order ID format',
       });
+    }
+
+    if (!validate(validatedData.warehouseId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid warehouse ID format',
+      });
+    }
+
+    const warehouseExists = await checkWarehouseExists(validatedData.warehouseId);
+    if (!warehouseExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Warehouse not found',
+      });
+    }
+
+    if (validatedData.createdById) {
+      if (!validate(validatedData.createdById)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid creator user ID format',
+        });
+      }
+
+      const creatorExists = await checkUserExists(validatedData.createdById);
+      if (!creatorExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Creator user not found',
+        });
+      }
+    }
+
+    if (validatedData.approvedById) {
+      if (!validate(validatedData.approvedById)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid approver user ID format',
+        });
+      }
+
+      const approverExists = await checkUserExists(validatedData.approvedById);
+      if (!approverExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Approver user not found',
+        });
+      }
     }
 
     for (const item of validatedData.receivedItems) {
