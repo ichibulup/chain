@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "pnpm run build",
   "builds": [
     {
       "src": "api/index.html",
@@ -17,7 +18,7 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".express/**"]
+        "includeFiles": [".express/**", "prisma/**", ".env.local"]
       }
     }
   ],
