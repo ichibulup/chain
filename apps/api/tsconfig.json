@@ -13,7 +13,7 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "ESNext",
+    "module": "NodeNext",
     "target": "ES2024",
     // "types": ["node"],
     // "types": [],
@@ -44,7 +44,7 @@
     "skipLibCheck": true,
     "incremental": true,
 
-    "moduleResolution": "bundler",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
