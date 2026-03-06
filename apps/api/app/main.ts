@@ -199,9 +199,6 @@ app.use("@/public", express.static(directory));
 // 🛣️ REST API ROUTES (Updated with Supabase Auth)
 // ================================
 // app.use("/auth", authRoutes);
-// app.use("/auth", authAdvancedRoutes);
-// app.use("/mfa", mfaRoutes);
-// app.use("/admin", adminRoutes);
 
 // app.use("/auth", authRoutes); // Keep for backwards compatibility
 // app.use("/payment", paymentRoutes); // Payment hooks từ providers
