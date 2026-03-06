@@ -3,18 +3,6 @@
   "buildCommand": "if [ -d apps/api ]; then pnpm --dir apps/api build; else pnpm build; fi",
   "builds": [
     {
-      "src": "api/index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/favicon.ico",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/globals.css",
-      "use": "@vercel/static"
-    },
-    {
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
@@ -27,18 +15,6 @@
   ],
 
   "routes": [
-    {
-      "src": "/",
-      "dest": "/api/index.html"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/api/favicon.ico"
-    },
-    {
-      "src": "/globals.css",
-      "dest": "/api/globals.css"
-    },
     {
       "src": "/(.*)", "dest": "/api/index.js"
     }
