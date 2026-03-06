@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "if [ -d apps/api ]; then pnpm --dir apps/api build; else pnpm build; fi",
   "builds": [
     {
       "src": "api/index.html",
@@ -17,7 +18,10 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".express/**", "prisma/**", ".env.local"]
+        "includeFiles": [
+          ".express/**",
+          "apps/api/.express/**"
+        ]
       }
     }
   ],
