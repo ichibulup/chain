@@ -18,7 +18,7 @@
     "env": "ts-node -r dotenv/config -r tsconfig-paths/register app/index.ts",
     "genalias": "prisma generate && pnpm run alias",
     "postinstall": "prisma generate",
-    "postbuild": "prisma generate",
+    "postbuild": "prisma generate && ls",
     "generated": "cp -R prisma/generated .express/prisma/generated",
     "watch": "nodemon --watch './**/*.ts' --exec 'ts-node' app/index.ts",
     "pack": "nodemon -r tsconfig-paths/register app/index.ts",

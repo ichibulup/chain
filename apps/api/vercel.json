@@ -5,7 +5,11 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".express/**"]
+        "includeFiles": [
+          ".express/**",
+          "prisma/**",
+          ".env.local"
+        ]
       }
     }
   ],
