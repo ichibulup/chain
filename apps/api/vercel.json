@@ -9,8 +9,7 @@
           ".express/**",
           "prisma/**",
           ".env.local"
-        ],
-        "buildCommand": "pnpm build"
+        ]
       }
     }
   ],
