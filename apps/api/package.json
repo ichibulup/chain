@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node .express/app/index.js",
     "build": "tsc && tsc-alias",
+    "building": "vercel build",
     "clean": "rm -rf .express node_modules",
     "alias": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "render": "pnpm install && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
