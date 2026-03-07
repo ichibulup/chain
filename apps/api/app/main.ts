@@ -202,13 +202,9 @@ app.use("@/public", express.static(directory));
 
 // app.use("/auth", authRoutes); // Keep for backwards compatibility
 // app.use("/payment", paymentRoutes); // Payment hooks từ providers
-// app.use('/reservation', reservationRoutes); // Public table viewing
 app.use('/upload', uploadRoutes); // File uploads
 
 // Protected routes (require Clerk authentication)
-// app.use("/product", productRoutes);
-// app.use("/task", taskRoutes);
-// app.use('/chat', chatRoutes);
 // app.use('/rls', rlsTestRoutes); // RLS testing routes (simple)
 // app.use("/purchase", purchaseRoutes)
 // app.use("/graphql", graphqlRoutes);
